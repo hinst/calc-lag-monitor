@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"math"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,6 +13,7 @@ import (
 
 const tickDuration = 100 * time.Millisecond
 const expensiveSourceCount = 10
+const trailingCalculationRequestsRatio = 0.1
 
 type CalculationLogMonitor struct {
 	Configuration Configuration
@@ -76,27 +78,47 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 	}
 	defer disconnect()
 
-	oldestCalculationRequest := monitor.findCalculationRequest(client, context,
+	oldestCalculationRequest := monitor.findCalculationRequests(client, context,
 		bson.M{"countOfSources": bson.M{"$lt": expensiveSourceCount}})
-	oldestExpensiveCalculationRequest := monitor.findCalculationRequest(client, context,
+	oldestExpensiveCalculationRequest := monitor.findCalculationRequests(client, context,
 		bson.M{"countOfSources": bson.M{"$gte": expensiveSourceCount}})
-	log.Print(oldestCalculationRequest.CalculateAt, oldestExpensiveCalculationRequest.CalculateAt)
+	log.Print(len(oldestCalculationRequest), len(oldestExpensiveCalculationRequest))
 }
 
-func (monitor *CalculationLogMonitor) findCalculationRequest(
+func (monitor *CalculationLogMonitor) findCalculationRequests(
 	client *mongo.Client, context context.Context, query bson.M,
-) CalculationRequest {
-	var calculationRequest CalculationRequest
+) []CalculationRequest {
+	var calculationRequests []CalculationRequest
 	calculationRequestCollection := client.
 		Database(monitor.Configuration.MongoDbName).
 		Collection("calculationRequest")
-	findOptions := options.FindOneOptions{}
+
+	countOptions := options.CountOptions{}
+	documentCount, documentCountError :=
+		calculationRequestCollection.CountDocuments(context, query, &countOptions)
+	AssertWrapped(documentCountError, "Unable to read count of calculation requests")
+
+	findOptions := options.FindOptions{}
 	findOptions.SetSort(bson.M{"calculateAt": 1})
-	oldestCalculationRequest := calculationRequestCollection.FindOne(context, query, &findOptions)
-	if oldestCalculationRequest != nil {
-		AssertWrapped(oldestCalculationRequest.Err(), "Unable to read oldest calculation request")
-		decodingError := oldestCalculationRequest.Decode(&calculationRequest)
-		AssertWrapped(decodingError, "Unable to decode calculation request")
+	var limit = math.Round(float64(documentCount) * trailingCalculationRequestsRatio)
+	if limit <= 1 {
+		limit = 1
 	}
-	return calculationRequest
+	if limit > 100 {
+		limit = 100
+	}
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetProjection(bson.M{"calculateAt": 1})
+	cursor, findError := calculationRequestCollection.Find(context, query, &findOptions)
+	AssertWrapped(findError, "Unable to find calculation requests")
+	defer cursor.Close(context)
+	for cursor.Next(context) {
+		var calculationRequest CalculationRequest
+		cursor.Decode(&calculationRequest)
+		decodingError := cursor.Decode(&calculationRequest)
+		AssertWrapped(decodingError, "Unable to decode calculation request")
+		calculationRequests = append(calculationRequests, calculationRequest)
+	}
+	AssertWrapped(cursor.Err(), "A cursor error occurred")
+	return calculationRequests
 }
