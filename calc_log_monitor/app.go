@@ -3,13 +3,18 @@ package main
 import "log"
 
 type App struct {
-	monitor  CalculationLogMonitor
+	monitor  *CalculationLogMonitor
 	finished chan bool
 }
 
 func (app *App) Run() {
 	if app.finished == nil {
 		app.finished = make(chan bool)
+	}
+	if app.monitor == nil {
+		app.monitor = &CalculationLogMonitor{
+			Configuration: LoadConfiguration(),
+		}
 	}
 	app.monitor.Start()
 	InstallShutdownReceiver(app.Shutdown)
