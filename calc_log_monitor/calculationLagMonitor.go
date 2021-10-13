@@ -78,11 +78,13 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 	}
 	defer disconnect()
 
-	oldestCalculationRequest := monitor.findCalculationRequests(client, context,
+	oldestCalculationRequests := monitor.findCalculationRequests(client, context,
 		bson.M{"countOfSources": bson.M{"$lt": expensiveSourceCount}})
-	oldestExpensiveCalculationRequest := monitor.findCalculationRequests(client, context,
+	oldestExpensiveCalculationRequests := monitor.findCalculationRequests(client, context,
 		bson.M{"countOfSources": bson.M{"$gte": expensiveSourceCount}})
-	log.Print(len(oldestCalculationRequest), len(oldestExpensiveCalculationRequest))
+	aggregatedRequests := monitor.aggregateCalculateAt(oldestCalculationRequests)
+	aggregatedExpensiveRequests := monitor.aggregateCalculateAt(oldestExpensiveCalculationRequests)
+	log.Print(len(oldestCalculationRequests), aggregatedRequests.Average, len(oldestExpensiveCalculationRequests), aggregatedExpensiveRequests.Average)
 }
 
 func (monitor *CalculationLogMonitor) findCalculationRequests(
@@ -124,7 +126,7 @@ func (monitor *CalculationLogMonitor) findCalculationRequests(
 }
 
 func (monitor *CalculationLogMonitor) aggregateCalculateAt(calculationRequests []CalculationRequest) (
-	min time.Time, average time.Time, max time.Time,
+	aggregated AggregatedCalculationRequest,
 ) {
 	var haveMin = false
 	var haveMax = false
@@ -132,24 +134,24 @@ func (monitor *CalculationLogMonitor) aggregateCalculateAt(calculationRequests [
 	var count = 0
 	for _, calculationRequest := range calculationRequests {
 		if !haveMin {
-			min = calculationRequest.CalculateAt
+			aggregated.Min = calculationRequest.CalculateAt
 			haveMin = true
 		}
-		if calculationRequest.CalculateAt.Before(min) {
-			min = calculationRequest.CalculateAt
+		if calculationRequest.CalculateAt.Before(aggregated.Min) {
+			aggregated.Min = calculationRequest.CalculateAt
 		}
 		if !haveMax {
-			max = calculationRequest.CalculateAt
+			aggregated.Max = calculationRequest.CalculateAt
 			haveMax = true
 		}
-		if max.Before(calculationRequest.CalculateAt) {
-			max = calculationRequest.CalculateAt
+		if aggregated.Max.Before(calculationRequest.CalculateAt) {
+			aggregated.Max = calculationRequest.CalculateAt
 		}
 		sum += float64(calculationRequest.CalculateAt.UnixMilli())
 		count += 1
 	}
 	if count > 0 {
-		average = time.UnixMilli(int64(sum / float64(count)))
+		aggregated.Average = time.UnixMilli(int64(sum / float64(count)))
 	}
 	return
 }
