@@ -4,5 +4,9 @@
 			"path": "calc_log_monitor"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"cSpell.words": [
+			"bson"
+		]
+	}
 }

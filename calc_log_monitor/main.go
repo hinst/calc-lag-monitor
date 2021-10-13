@@ -1,7 +1,8 @@
 package main
 
 func main() {
-	println("NOW STARTING...")
+	println("STARTING...")
 	var app App
 	app.Run()
+	println("...EXITING")
 }
