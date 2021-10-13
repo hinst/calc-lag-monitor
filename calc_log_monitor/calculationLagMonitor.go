@@ -122,3 +122,34 @@ func (monitor *CalculationLogMonitor) findCalculationRequests(
 	AssertWrapped(cursor.Err(), "A cursor error occurred")
 	return calculationRequests
 }
+
+func (monitor *CalculationLogMonitor) aggregateCalculateAt(calculationRequests []CalculationRequest) (
+	min time.Time, average time.Time, max time.Time,
+) {
+	var haveMin = false
+	var haveMax = false
+	var sum float64 = 0
+	var count = 0
+	for _, calculationRequest := range calculationRequests {
+		if !haveMin {
+			min = calculationRequest.CalculateAt
+			haveMin = true
+		}
+		if calculationRequest.CalculateAt.Before(min) {
+			min = calculationRequest.CalculateAt
+		}
+		if !haveMax {
+			max = calculationRequest.CalculateAt
+			haveMax = true
+		}
+		if max.Before(calculationRequest.CalculateAt) {
+			max = calculationRequest.CalculateAt
+		}
+		sum += float64(calculationRequest.CalculateAt.UnixMilli())
+		count += 1
+	}
+	if count > 0 {
+		average = time.UnixMilli(int64(sum / float64(count)))
+	}
+	return
+}
