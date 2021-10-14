@@ -84,7 +84,8 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 		bson.M{"countOfSources": bson.M{"$gte": expensiveSourceCount}})
 	aggregatedRequests := monitor.aggregateCalculateAt(oldestCalculationRequests)
 	aggregatedExpensiveRequests := monitor.aggregateCalculateAt(oldestExpensiveCalculationRequests)
-	log.Print(len(oldestCalculationRequests), aggregatedRequests.Average, len(oldestExpensiveCalculationRequests), aggregatedExpensiveRequests.Average)
+	log.Print(len(oldestCalculationRequests), aggregatedRequests.Average,
+		len(oldestExpensiveCalculationRequests), aggregatedExpensiveRequests.Average)
 }
 
 func (monitor *CalculationLogMonitor) findCalculationRequests(
