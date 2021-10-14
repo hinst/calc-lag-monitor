@@ -36,3 +36,8 @@ func (storage *DataStorage) SaveCalculationLagInfoRow(row *CalculationLagInfoRow
 		return nil
 	})
 }
+
+func (storage *DataStorage) Close() {
+	error := storage.db.Close()
+	AssertWrapped(error, "Unable to close database")
+}

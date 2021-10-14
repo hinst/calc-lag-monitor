@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math"
+	"runtime/debug"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,7 +17,7 @@ const expensiveSourceCount = 10
 const trailingCalculationRequestsRatio = 0.1
 
 type CalculationLogMonitor struct {
-	Storage       DataStorage
+	Storage       *DataStorage
 	Configuration Configuration
 	IsRunning     bool
 	Url           string
@@ -62,7 +63,7 @@ func (monitor *CalculationLogMonitor) run() {
 func (monitor *CalculationLogMonitor) readCalculationLagSafe() {
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			log.Print("Unable to read calculation log\n", recovered)
+			log.Print("Unable to read calculation log\n", recovered, "\n", string(debug.Stack()))
 		}
 	}()
 	monitor.readCalculationLag()
@@ -85,8 +86,6 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 		bson.M{"countOfSources": bson.M{"$gte": expensiveSourceCount}})
 	cheapAggregatedRequest := monitor.aggregateCalculateAt(oldestCheapCalculationRequests)
 	expensiveAggregatedRequest := monitor.aggregateCalculateAt(expensiveOldestCalculationRequests)
-	log.Print(len(oldestCheapCalculationRequests), cheapAggregatedRequest.Average,
-		len(expensiveOldestCalculationRequests), expensiveAggregatedRequest.Average)
 
 	var cheapAggregatedLag AggregatedCalculationLag
 	cheapAggregatedLag.ReadFromRequest(&cheapAggregatedRequest)
@@ -96,6 +95,8 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 		Time:      time.Now(),
 		Cheap:     cheapAggregatedLag,
 		Expensive: expensiveAggregatedLag}
+	log.Print(len(oldestCheapCalculationRequests), cheapAggregatedLag.Average,
+		len(expensiveOldestCalculationRequests), expensiveAggregatedLag.Average)
 	monitor.Storage.SaveCalculationLagInfoRow(&calculationLagInfoRow)
 }
 
