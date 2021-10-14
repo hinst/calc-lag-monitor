@@ -3,28 +3,33 @@ package main
 import "log"
 
 type App struct {
-	monitor  *CalculationLogMonitor
-	finished chan bool
+	Monitor  *CalculationLogMonitor
+	Storage  *DataStorage
+	Finished chan bool
 }
 
 func (app *App) Run() {
-	if app.finished == nil {
-		app.finished = make(chan bool)
-	}
-	if app.monitor == nil {
-		app.monitor = &CalculationLogMonitor{
+	if app.Monitor == nil {
+		app.Monitor = &CalculationLogMonitor{
 			Configuration: LoadConfiguration(),
 		}
 	}
-	app.monitor.Start()
+	if app.Storage == nil {
+		app.Storage = &DataStorage{}
+		app.Storage.Open()
+	}
+	if app.Finished == nil {
+		app.Finished = make(chan bool)
+	}
+	app.Monitor.Start()
 	InstallShutdownReceiver(app.Shutdown)
-	<-app.finished
+	<-app.Finished
 }
 
 func (app *App) Shutdown() {
 	log.Print("Received shutdown signal")
-	app.monitor.Stop()
-	app.monitor.Wait()
+	app.Monitor.Stop()
+	app.Monitor.Wait()
 	log.Print("Shutdown process is now complete")
-	app.finished <- true
+	app.Finished <- true
 }

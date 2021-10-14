@@ -16,6 +16,7 @@ const expensiveSourceCount = 10
 const trailingCalculationRequestsRatio = 0.1
 
 type CalculationLogMonitor struct {
+	Storage       DataStorage
 	Configuration Configuration
 	IsRunning     bool
 	Url           string
@@ -78,14 +79,24 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 	}
 	defer disconnect()
 
-	oldestCalculationRequests := monitor.findCalculationRequests(client, context,
+	oldestCheapCalculationRequests := monitor.findCalculationRequests(client, context,
 		bson.M{"countOfSources": bson.M{"$lt": expensiveSourceCount}})
-	oldestExpensiveCalculationRequests := monitor.findCalculationRequests(client, context,
+	expensiveOldestCalculationRequests := monitor.findCalculationRequests(client, context,
 		bson.M{"countOfSources": bson.M{"$gte": expensiveSourceCount}})
-	aggregatedRequests := monitor.aggregateCalculateAt(oldestCalculationRequests)
-	aggregatedExpensiveRequests := monitor.aggregateCalculateAt(oldestExpensiveCalculationRequests)
-	log.Print(len(oldestCalculationRequests), aggregatedRequests.Average,
-		len(oldestExpensiveCalculationRequests), aggregatedExpensiveRequests.Average)
+	cheapAggregatedRequest := monitor.aggregateCalculateAt(oldestCheapCalculationRequests)
+	expensiveAggregatedRequest := monitor.aggregateCalculateAt(expensiveOldestCalculationRequests)
+	log.Print(len(oldestCheapCalculationRequests), cheapAggregatedRequest.Average,
+		len(expensiveOldestCalculationRequests), expensiveAggregatedRequest.Average)
+
+	var cheapAggregatedLag AggregatedCalculationLag
+	cheapAggregatedLag.ReadFromRequest(&cheapAggregatedRequest)
+	var expensiveAggregatedLag AggregatedCalculationLag
+	expensiveAggregatedLag.ReadFromRequest(&expensiveAggregatedRequest)
+	calculationLagInfoRow := CalculationLagInfoRow{
+		Time:      time.Now(),
+		Cheap:     cheapAggregatedLag,
+		Expensive: expensiveAggregatedLag}
+	monitor.Storage.SaveCalculationLagInfoRow(&calculationLagInfoRow)
 }
 
 func (monitor *CalculationLogMonitor) findCalculationRequests(
