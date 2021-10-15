@@ -53,23 +53,28 @@ func (monitor *CalculationLogMonitor) Wait() {
 func (monitor *CalculationLogMonitor) run() {
 	for monitor.IsRunning {
 		if monitor.ticker.Advance(tickDuration) {
-			monitor.readCalculationLagSafe()
+			monitor.runOnceSafe()
 		}
 		time.Sleep(tickDuration)
 	}
 	monitor.Finished <- true
 }
 
-func (monitor *CalculationLogMonitor) readCalculationLagSafe() {
+func (monitor *CalculationLogMonitor) runOnceSafe() {
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			log.Print("Unable to read calculation log\n", recovered, "\n", string(debug.Stack()))
+			log.Print("Unable to process calculation log\n", recovered, "\n", string(debug.Stack()))
 		}
 	}()
-	monitor.readCalculationLag()
+	monitor.runOnce()
 }
 
-func (monitor *CalculationLogMonitor) readCalculationLag() {
+func (monitor *CalculationLogMonitor) runOnce() {
+	calculationLagInfoRow := monitor.readCalculationLag()
+	monitor.Storage.SaveCalculationLagInfoRow(&calculationLagInfoRow)
+}
+
+func (monitor *CalculationLogMonitor) readCalculationLag() CalculationLagInfoRow {
 	context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	client, mongoError := mongo.Connect(context, options.Client().ApplyURI(monitor.Url))
@@ -95,9 +100,7 @@ func (monitor *CalculationLogMonitor) readCalculationLag() {
 		Time:      time.Now(),
 		Cheap:     cheapAggregatedLag,
 		Expensive: expensiveAggregatedLag}
-	log.Print(len(oldestCheapCalculationRequests), cheapAggregatedLag.Average,
-		len(expensiveOldestCalculationRequests), expensiveAggregatedLag.Average)
-	monitor.Storage.SaveCalculationLagInfoRow(&calculationLagInfoRow)
+	return calculationLagInfoRow
 }
 
 func (monitor *CalculationLogMonitor) findCalculationRequests(
