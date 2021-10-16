@@ -10,7 +10,7 @@ type DataProvider struct {
 }
 
 func (provider *DataProvider) Register() {
-	HandleFunc("lag", provider.Lag)
+	HandleFunc("/lag", provider.Lag)
 }
 
 func (provider *DataProvider) Lag(responseWriter http.ResponseWriter, request *http.Request) {

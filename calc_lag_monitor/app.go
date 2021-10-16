@@ -1,11 +1,16 @@
 package main
 
-import "log"
+import (
+	"log"
+	"net"
+	"net/http"
+)
 
 type App struct {
-	Storage *DataStorage
-	Monitor *CalculationLogMonitor
-	Exiting chan bool
+	Storage  *DataStorage
+	Monitor  *CalculationLogMonitor
+	Provider *DataProvider
+	Exiting  chan bool
 }
 
 func (app *App) Run() {
@@ -18,6 +23,16 @@ func (app *App) Run() {
 			Configuration: LoadConfiguration(),
 			Storage:       app.Storage,
 		}
+	}
+	if app.Provider == nil {
+		app.Provider = &DataProvider{Storage: app.Storage}
+		app.Provider.Register()
+		listener, listenerError := net.Listen("tcp", ":3006")
+		AssertWrapped(listenerError, "Unable to listen")
+		go func() {
+			error := http.Serve(listener, nil)
+			AssertWrapped(error, "Unable to serve")
+		}()
 	}
 	if app.Exiting == nil {
 		app.Exiting = make(chan bool)
