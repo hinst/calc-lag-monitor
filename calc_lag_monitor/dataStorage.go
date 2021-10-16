@@ -37,6 +37,32 @@ func (storage *DataStorage) SaveCalculationLagInfoRow(row *CalculationLagInfoRow
 	})
 }
 
+func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, endUnixMillis int64) (
+	rows []*CalculationLagInfoRow,
+) {
+	storage.db.View(func(transaction *bolt.Tx) error {
+		cursor := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES).Cursor()
+		var key []byte
+		var value []byte
+		if startUnixMillis != 0 {
+			key, value = cursor.Seek(Int64ToBytes(startUnixMillis))
+		} else {
+			key, value = cursor.First()
+		}
+		for key != nil {
+			if value != nil {
+				row := &CalculationLagInfoRow{}
+			}
+			key, value = cursor.Next()
+			if endUnixMillis != 0 && !(BytesToInt64(key) < endUnixMillis) {
+				break
+			}
+		}
+		return nil
+	})
+	return
+}
+
 func (storage *DataStorage) Close() {
 	error := storage.db.Close()
 	AssertWrapped(error, "Unable to close database")

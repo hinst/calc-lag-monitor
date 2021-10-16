@@ -18,3 +18,7 @@ func Int64ToBytes(value int64) (result []byte) {
 	DEFAULT_ENCODING.PutUint64(result, uint64(value))
 	return
 }
+
+func BytesToInt64(value []byte) int64 {
+	return int64(DEFAULT_ENCODING.Uint64(value))
+}
