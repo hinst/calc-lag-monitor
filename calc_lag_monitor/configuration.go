@@ -8,6 +8,8 @@ import (
 type Configuration struct {
 	MongoDbUrl  string `json:"mongoDbUrl"`
 	MongoDbName string `json:"mongoDbName"`
+
+	CalculationLagMonitorSamplingIntervalSeconds int `json:"calculationLagMonitorSamplingIntervalSeconds"`
 }
 
 const configurationFilePath = "./configuration.json"
@@ -16,7 +18,12 @@ func LoadConfiguration() Configuration {
 	fileContent, fileReadError := ioutil.ReadFile(configurationFilePath)
 	AssertWrapped(fileReadError, "Cannot read URL from file "+configurationFilePath)
 	var configuration Configuration
+	configuration.SetDefault()
 	var unmarshalError = json.Unmarshal(fileContent, &configuration)
 	AssertWrapped(unmarshalError, "Cannot decode file content from "+configurationFilePath)
 	return configuration
+}
+
+func (configuration *Configuration) SetDefault() {
+	configuration.CalculationLagMonitorSamplingIntervalSeconds = 60
 }
