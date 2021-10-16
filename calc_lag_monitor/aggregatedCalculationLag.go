@@ -37,3 +37,35 @@ func (lag *AggregatedCalculationLag) ReadFromRequest(request *AggregatedCalculat
 	lag.Average = now.Sub(request.Average)
 	lag.Max = now.Sub(request.Max)
 }
+
+type AggregatedCalculationLagEx struct {
+	AggregatedCalculationLag
+	Count int
+	Sum   float64
+}
+
+func (lag *AggregatedCalculationLagEx) InitializeAggregation(other AggregatedCalculationLag) {
+	lag.Min = other.Min
+	lag.Max = other.Max
+	lag.Count = 0
+	lag.Sum = 0
+}
+
+func (lag *AggregatedCalculationLagEx) Aggregate(other AggregatedCalculationLag) {
+	if other.Min < lag.Min {
+		lag.Min = other.Min
+	}
+	lag.Sum += float64(other.Average)
+	if lag.Max < other.Max {
+		lag.Max = other.Max
+	}
+	lag.Count += 1
+}
+
+func (lag *AggregatedCalculationLagEx) FinalizeAggregation() {
+	if lag.Count > 0 {
+		lag.Average = time.Duration(
+			int64(lag.Sum / float64(lag.Count)),
+		)
+	}
+}
