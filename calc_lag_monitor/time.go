@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"errors"
+	"strconv"
+	"time"
+)
 
 type TimeMeasurementUnit int8
 
@@ -11,6 +15,7 @@ const (
 	TimeMeasurementUnitHour   TimeMeasurementUnit = 3
 	TimeMeasurementUnitDay    TimeMeasurementUnit = 4
 	TimeMeasurementUnitMonth  TimeMeasurementUnit = 5
+	TimeMeasurementUnitYear   TimeMeasurementUnit = 6
 )
 
 func TruncateTime(t time.Time, unit TimeMeasurementUnit) time.Time {
@@ -28,4 +33,20 @@ func TruncateTime(t time.Time, unit TimeMeasurementUnit) time.Time {
 	default:
 		return t
 	}
+}
+
+func (unit TimeMeasurementUnit) GetNext() TimeMeasurementUnit {
+	return unit + 1
+}
+
+func (unit TimeMeasurementUnit) GetNextOrFail() TimeMeasurementUnit {
+	unit = unit.GetNext()
+	if !unit.IsValid() {
+		panic(errors.New("Unable to get next time measurement unit " + strconv.Itoa(int(unit))))
+	}
+	return unit
+}
+
+func (unit TimeMeasurementUnit) IsValid() bool {
+	return TimeMeasurementUnitNone <= unit && unit <= TimeMeasurementUnitYear
 }
