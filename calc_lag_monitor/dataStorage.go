@@ -52,6 +52,8 @@ func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, en
 		for key != nil {
 			if value != nil {
 				row := &CalculationLagInfoRow{}
+				row.Read(bytes.NewBuffer(value))
+				rows = append(rows, row)
 			}
 			key, value = cursor.Next()
 			if endUnixMillis != 0 && !(BytesToInt64(key) < endUnixMillis) {
