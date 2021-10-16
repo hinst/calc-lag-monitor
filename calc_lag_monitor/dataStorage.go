@@ -111,5 +111,14 @@ func (builder *CalculationLagInfoRowResponseBuilder) addRow(row *CalculationLagI
 	builder.Rows[rowTime] = row
 	for len(builder.Rows) > OUTPUT_ROW_COUNT_LIMIT {
 		builder.AggregationLevel = builder.AggregationLevel.GetNextOrFail()
+		builder.collapseRows()
+	}
+}
+
+func (builder *CalculationLagInfoRowResponseBuilder) collapseRows() {
+	multiRows := make(map[int64][]*CalculationLagInfoRow)
+	for rowTime, row := range builder.Rows {
+		rowTime = TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
+		multiRows[rowTime] = append(multiRows[rowTime], row)
 	}
 }
