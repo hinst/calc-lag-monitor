@@ -10,7 +10,13 @@ type BinaryObjectVersionNumber = uint8
 var DEFAULT_ENCODING = binary.LittleEndian
 
 func BinaryWrite(buffer *bytes.Buffer, data interface{}) {
-	AssertWrapped(binary.Write(buffer, DEFAULT_ENCODING, data), "Unable to write binary data")
+	error := binary.Write(buffer, DEFAULT_ENCODING, data)
+	AssertWrapped(error, "Unable to write binary data")
+}
+
+func BinaryRead(buffer *bytes.Buffer, data interface{}) {
+	error := binary.Read(buffer, DEFAULT_ENCODING, data)
+	AssertWrapped(error, "Unable to read binary data")
 }
 
 func Int64ToBytes(value int64) (result []byte) {
