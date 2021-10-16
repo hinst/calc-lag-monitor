@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"errors"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +18,17 @@ func (lag *AggregatedCalculationLag) Write(buffer *bytes.Buffer) {
 	BinaryWrite(buffer, lag.Min)
 	BinaryWrite(buffer, lag.Average)
 	BinaryWrite(buffer, lag.Max)
+}
+
+func (lag *AggregatedCalculationLag) Read(buffer *bytes.Buffer) {
+	var version BinaryObjectVersionNumber
+	BinaryRead(buffer, &version)
+	if version != 1 {
+		panic(errors.New("Expected version 1 but got " + strconv.Itoa(int(version))))
+	}
+	BinaryRead(buffer, &lag.Min)
+	BinaryRead(buffer, &lag.Average)
+	BinaryRead(buffer, &lag.Max)
 }
 
 func (lag *AggregatedCalculationLag) ReadFromRequest(request *AggregatedCalculationRequest) {
