@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 )
 
 type BinaryObjectVersionNumber = uint8
@@ -27,4 +28,10 @@ func Int64ToBytes(value int64) (result []byte) {
 
 func BytesToInt64(value []byte) int64 {
 	return int64(DEFAULT_ENCODING.Uint64(value))
+}
+
+func EncodeJson(data interface{}) []byte {
+	text, error := json.Marshal(data)
+	AssertWrapped(error, "Unable to encode data as json")
+	return text
 }

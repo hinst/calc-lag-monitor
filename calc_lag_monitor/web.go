@@ -9,3 +9,7 @@ type WebFunction = func(http.ResponseWriter, *http.Request)
 func HandleFunc(path string, f WebFunction) {
 	http.HandleFunc(BASE_URL+path, f)
 }
+
+func AddJsonHeader(header http.Header) {
+	header.Add("Content-Type", "application/json")
+}

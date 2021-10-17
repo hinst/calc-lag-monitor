@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -17,5 +16,6 @@ func (provider *DataProvider) Lag(responseWriter http.ResponseWriter, request *h
 	start := ParseIntOr0(request.URL.Query().Get("start"))
 	end := ParseIntOr0(request.URL.Query().Get("end"))
 	rows := provider.Storage.ReadCalculationLagInfoRows(start, end)
-	log.Print(len(rows))
+	AddJsonHeader(responseWriter.Header())
+	responseWriter.Write(EncodeJson(rows))
 }
