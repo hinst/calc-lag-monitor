@@ -32,3 +32,20 @@ func (row *CalculationLagInfoRow) Read(buffer *bytes.Buffer) {
 	row.Cheap.Read(buffer)
 	row.Expensive.Read(buffer)
 }
+
+func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRow) (result *CalculationLagInfoRow) {
+	if len(rows) == 0 {
+		return
+	}
+	*result = *rows[0]
+	for _, item := range rows {
+		if item.Time.Before(result.Time) {
+			result.Time = item.Time
+		}
+	}
+	return
+}
+
+type CalculationLagInfoRowEx struct {
+	CalculationLagInfoRow
+}
