@@ -22,6 +22,7 @@ func (app *App) Run() {
 		app.Monitor = &CalculationLogMonitor{
 			Configuration: LoadConfiguration(),
 			Storage:       app.Storage,
+			LogEnabled:    true,
 		}
 	}
 	if app.Provider == nil {

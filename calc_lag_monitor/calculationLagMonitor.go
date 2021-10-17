@@ -24,6 +24,7 @@ type CalculationLogMonitor struct {
 	Finished      chan bool
 	Interval      time.Duration
 	ticker        Ticker
+	LogEnabled    bool
 }
 
 func (monitor *CalculationLogMonitor) Start() {
@@ -72,6 +73,9 @@ func (monitor *CalculationLogMonitor) runOnceSafe() {
 
 func (monitor *CalculationLogMonitor) runOnce() {
 	calculationLagInfoRow := monitor.readCalculationLag()
+	if monitor.LogEnabled {
+		log.Println(calculationLagInfoRow.String())
+	}
 	monitor.Storage.SaveCalculationLagInfoRow(&calculationLagInfoRow)
 }
 
@@ -94,9 +98,13 @@ func (monitor *CalculationLogMonitor) readCalculationLag() CalculationLagInfoRow
 	expensiveAggregatedRequest := monitor.aggregateCalculateAt(expensiveOldestCalculationRequests)
 
 	var cheapAggregatedLag AggregatedCalculationLag
-	cheapAggregatedLag.ReadFromRequest(&cheapAggregatedRequest)
+	if cheapAggregatedRequest != nil {
+		cheapAggregatedLag.ReadFromRequest(cheapAggregatedRequest)
+	}
 	var expensiveAggregatedLag AggregatedCalculationLag
-	expensiveAggregatedLag.ReadFromRequest(&expensiveAggregatedRequest)
+	if expensiveAggregatedRequest != nil {
+		expensiveAggregatedLag.ReadFromRequest(expensiveAggregatedRequest)
+	}
 	calculationLagInfoRow := CalculationLagInfoRow{
 		Time:      time.Now(),
 		Cheap:     cheapAggregatedLag,
@@ -142,9 +150,11 @@ func (monitor *CalculationLogMonitor) findCalculationRequests(
 	return calculationRequests
 }
 
-func (monitor *CalculationLogMonitor) aggregateCalculateAt(calculationRequests []CalculationRequest) (
-	aggregated AggregatedCalculationRequest,
-) {
+func (monitor *CalculationLogMonitor) aggregateCalculateAt(calculationRequests []CalculationRequest) *AggregatedCalculationRequest {
+	if len(calculationRequests) <= 0 {
+		return nil
+	}
+	var aggregated AggregatedCalculationRequest
 	var haveMin = false
 	var haveMax = false
 	var sum float64 = 0
@@ -170,5 +180,5 @@ func (monitor *CalculationLogMonitor) aggregateCalculateAt(calculationRequests [
 	if count > 0 {
 		aggregated.Average = time.UnixMilli(int64(sum / float64(count)))
 	}
-	return
+	return &aggregated
 }
