@@ -33,6 +33,11 @@ func (row *CalculationLagInfoRow) Read(buffer *bytes.Buffer) {
 	row.Expensive.Read(buffer)
 }
 
+func (row *CalculationLagInfoRow) String() string {
+	return row.Time.Format(time.RFC3339Nano) + " " +
+		row.Cheap.Average.String() + " " + row.Expensive.Average.String()
+}
+
 func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRow) *CalculationLagInfoRow {
 	if len(rows) <= 0 {
 		return nil
