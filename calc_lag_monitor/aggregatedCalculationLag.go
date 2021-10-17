@@ -44,28 +44,29 @@ type AggregatedCalculationLagEx struct {
 	Sum   float64
 }
 
-func (lag *AggregatedCalculationLagEx) InitializeAggregation(other AggregatedCalculationLag) {
-	lag.Min = other.Min
-	lag.Max = other.Max
+func (lag *AggregatedCalculationLagEx) InitializeAggregation(firstItem AggregatedCalculationLag) {
+	lag.Min = firstItem.Min
+	lag.Max = firstItem.Max
 	lag.Count = 0
 	lag.Sum = 0
 }
 
-func (lag *AggregatedCalculationLagEx) Aggregate(other AggregatedCalculationLag) {
-	if other.Min < lag.Min {
-		lag.Min = other.Min
+func (lag *AggregatedCalculationLagEx) Aggregate(item AggregatedCalculationLag) {
+	if item.Min < lag.Min {
+		lag.Min = item.Min
 	}
-	lag.Sum += float64(other.Average)
-	if lag.Max < other.Max {
-		lag.Max = other.Max
+	lag.Sum += float64(item.Average)
+	if lag.Max < item.Max {
+		lag.Max = item.Max
 	}
 	lag.Count += 1
 }
 
-func (lag *AggregatedCalculationLagEx) FinalizeAggregation() {
+func (lag *AggregatedCalculationLagEx) FinalizeAggregation() AggregatedCalculationLag {
 	if lag.Count > 0 {
 		lag.Average = time.Duration(
 			int64(lag.Sum / float64(lag.Count)),
 		)
 	}
+	return lag.AggregatedCalculationLag
 }

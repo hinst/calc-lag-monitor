@@ -55,4 +55,16 @@ func (builder *CalculationLagInfoRowResponseBuilder) collapseRows() {
 		rowTime = TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
 		multiRows[rowTime] = append(multiRows[rowTime], row)
 	}
+	builder.Rows = make(map[int64]*CalculationLagInfoRow)
+	for rowTime, rows := range multiRows {
+		builder.Rows[rowTime] = AggregateCalculationLagInfoRows(rows)
+	}
+}
+
+func (builder *CalculationLagInfoRowResponseBuilder) GetRowArray() []*CalculationLagInfoRow {
+	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
+	for _, item := range builder.Rows {
+		array = append(array, item)
+	}
+	return array
 }
