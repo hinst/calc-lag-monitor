@@ -33,19 +33,41 @@ func (row *CalculationLagInfoRow) Read(buffer *bytes.Buffer) {
 	row.Expensive.Read(buffer)
 }
 
-func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRow) (result *CalculationLagInfoRow) {
-	if len(rows) == 0 {
-		return
+func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRow) *CalculationLagInfoRow {
+	if len(rows) <= 0 {
+		return nil
 	}
-	*result = *rows[0]
+	var aggregator CalculationLagInfoRowEx
+	aggregator.InitializeAggregation(rows[0])
 	for _, item := range rows {
-		if item.Time.Before(result.Time) {
-			result.Time = item.Time
-		}
+		aggregator.Aggregate(item)
 	}
-	return
+	result := aggregator.FinalizeAggregation()
+	return &result
 }
 
 type CalculationLagInfoRowEx struct {
 	CalculationLagInfoRow
+	Cheap     AggregatedCalculationLagEx
+	Expensive AggregatedCalculationLagEx
+}
+
+func (row *CalculationLagInfoRowEx) InitializeAggregation(firstItem *CalculationLagInfoRow) {
+	row.Time = firstItem.Time
+	row.Cheap.InitializeAggregation(firstItem.Cheap)
+	row.Expensive.InitializeAggregation(firstItem.Expensive)
+}
+
+func (row *CalculationLagInfoRowEx) Aggregate(item *CalculationLagInfoRow) {
+	if item.Time.Before(row.Time) {
+		row.Time = item.Time
+	}
+	row.Cheap.Aggregate(item.Cheap)
+	row.Expensive.Aggregate(item.Expensive)
+}
+
+func (row *CalculationLagInfoRowEx) FinalizeAggregation() CalculationLagInfoRow {
+	row.CalculationLagInfoRow.Cheap = row.Cheap.FinalizeAggregation()
+	row.CalculationLagInfoRow.Expensive = row.Expensive.FinalizeAggregation()
+	return row.CalculationLagInfoRow
 }
