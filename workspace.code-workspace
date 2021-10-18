@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "calc_lag_monitor"
+		},
+		{
+			"path": "calc-lag-mon-ui"
 		}
 	],
 	"settings": {
