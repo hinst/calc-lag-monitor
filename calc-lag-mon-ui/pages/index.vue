@@ -5,7 +5,8 @@
 <script lang="ts">
 export default defineComponent({
     mounted() {
-        console.log('mounted');
+        if (!this.$route.fullPath.startsWith('/clm-ui'))
+            this.$router.push('/clm-ui');
     }
 });
 </script>

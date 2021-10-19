@@ -5,7 +5,6 @@
 <script lang="ts">
 export default defineComponent({
     mounted() {
-        console.log('mounted');
     }
 });
 </script>
