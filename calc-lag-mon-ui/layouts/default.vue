@@ -3,9 +3,10 @@
     <v-navigation-drawer
       v-model="drawer"
       :mini-variant="miniVariant"
-      :clipped="clipped"
       fixed
+      clipped
       app
+      temporary
     >
       <v-list>
         <v-list-item
@@ -25,29 +26,11 @@
       </v-list>
     </v-navigation-drawer>
     <v-app-bar
-      :clipped-left="clipped"
+      clipped-left
       fixed
       app
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-btn
-        icon
-        @click.stop="miniVariant = !miniVariant"
-      >
-        <v-icon>mdi-{{ `chevron-${miniVariant ? 'right' : 'left'}` }}</v-icon>
-      </v-btn>
-      <v-btn
-        icon
-        @click.stop="clipped = !clipped"
-      >
-        <v-icon>mdi-application</v-icon>
-      </v-btn>
-      <v-btn
-        icon
-        @click.stop="fixed = !fixed"
-      >
-        <v-icon>mdi-minus</v-icon>
-      </v-btn>
       <v-toolbar-title v-text="title" />
       <v-spacer />
     </v-app-bar>
@@ -65,11 +48,11 @@
   </v-app>
 </template>
 
-<script>
+<script lang='ts'>
+import { defineComponent } from ''
 export default {
   data () {
     return {
-      clipped: false,
       drawer: false,
       fixed: false,
       items: [
@@ -85,7 +68,7 @@ export default {
         }
       ],
       miniVariant: false,
-      title: 'Vuetify.js'
+      title: 'Calculation lag monitor'
     }
   }
 }
