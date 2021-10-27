@@ -49,7 +49,6 @@
 </template>
 
 <script lang='ts'>
-import { defineComponent } from ''
 export default {
   data () {
     return {
