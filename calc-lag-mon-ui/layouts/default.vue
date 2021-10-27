@@ -56,14 +56,9 @@ export default {
       fixed: false,
       items: [
         {
-          icon: 'mdi-apps',
-          title: 'Welcome',
-          to: '/'
-        },
-        {
-          icon: 'mdi-chart-bubble',
-          title: 'Inspire',
-          to: '/inspire'
+          icon: 'mdi-chart-timeline-variant',
+          title: 'Calc. lag chart',
+          to: '/calculation-lag-chart'
         }
       ],
       miniVariant: false,
