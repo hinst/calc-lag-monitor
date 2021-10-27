@@ -15,16 +15,22 @@ type App struct {
 
 func (app *App) Run() {
 	app.InitializeStorage()
-	app.InitializeMonitor()
+	//app.InitializeMonitor()
 	app.InitializeProvider()
+	app.InitializeWebUi()
+	app.StartWebServer()
+	if app.Monitor != nil {
+		app.Monitor.Start()
+	}
 	if app.Exiting == nil {
 		app.Exiting = make(chan bool)
 	}
-	app.Monitor.Start()
 	InstallShutdownReceiver(app.Shutdown)
 	<-app.Exiting
-	app.Monitor.Stop()
-	app.Monitor.Wait()
+	if app.Monitor != nil {
+		app.Monitor.Stop()
+		app.Monitor.Wait()
+	}
 	app.Storage.Close()
 	log.Print("Shutdown process is now complete")
 }
@@ -50,13 +56,26 @@ func (app *App) InitializeProvider() {
 	if app.Provider == nil {
 		app.Provider = &DataProvider{Storage: app.Storage}
 		app.Provider.Register()
-		listener, listenerError := net.Listen("tcp", ":3006")
-		AssertWrapped(listenerError, "Unable to listen")
-		go func() {
-			error := http.Serve(listener, nil)
-			AssertWrapped(error, "Unable to serve")
-		}()
 	}
+}
+
+func (app *App) InitializeWebUi() {
+	registerFolder := func(path string) {
+		files := http.FileServer(http.Dir("../calc-lag-mon-ui/dist" + path))
+		http.Handle("/clm-ui"+path, http.StripPrefix("/clm-ui"+path, files))
+	}
+	registerFolder("")
+	registerFolder("/_nuxt/")
+	registerFolder("/calculation-lag-chart/")
+}
+
+func (app *App) StartWebServer() {
+	listener, listenerError := net.Listen("tcp", ":3006")
+	AssertWrapped(listenerError, "Unable to listen")
+	go func() {
+		error := http.Serve(listener, nil)
+		AssertWrapped(error, "Unable to serve")
+	}()
 }
 
 func (app *App) Shutdown() {
