@@ -15,7 +15,7 @@ type App struct {
 
 func (app *App) Run() {
 	app.InitializeStorage()
-	//app.InitializeMonitor()
+	app.InitializeMonitor()
 	app.InitializeProvider()
 	app.InitializeWebUi()
 	app.StartWebServer()
