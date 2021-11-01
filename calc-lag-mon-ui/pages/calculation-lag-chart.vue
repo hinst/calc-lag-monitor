@@ -1,5 +1,24 @@
 <template>
   <div>
+    <div>
+      <v-menu>
+        <template v-slot:activator="{ on, attrs }">
+          <v-text-field
+            v-model="timeStart"
+            label="From"
+            prepend-icon="mdi-calendar"
+            readonly
+            v-bind="attrs"
+            v-on="on"
+          ></v-text-field>
+        </template>
+        <v-date-picker
+          v-model="timeStart"
+          :active-picker.sync="activePicker"
+          @change="changeTimeRange"
+        ></v-date-picker>
+      </v-menu>
+    </div>
     <div v-if="chartData" style="max-width: 100%">
       <CalculationLagChart :height="500" :chart-data="chartData" :options="chartOptions" />
     </div>
@@ -8,7 +27,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, useContext } from '@nuxtjs/composition-api';
-import * as lodash from 'lodash';
+import lodash from 'lodash';
 
 interface CalculationLagItem {
   Min: number;
@@ -26,42 +45,43 @@ export default defineComponent({
   setup() {
     const context = useContext();
     const chartData = ref<any>(null);
-    const chartOptions = ref<any>(
-      {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          xAxes: [{
-            type: 'time',
-            time: {
-              displayFormats: {
-                'millisecond': 'MMM DD',
-                'second': 'MMM DD',
-                'minute': 'MMM DD',
-                'hour': 'MMM DD',
-                'day': 'MMM DD',
-                'week': 'MMM DD',
-                'month': 'MMM DD',
-                'quarter': 'MMM DD',
-                'year': 'MMM DD',
-              }
-            },
-            gridLines: {
-              color: 'rgba(200, 200, 200, 0.5)'
+    const chartOptions = ref<any>({
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        xAxes: [{
+          type: 'time',
+          time: {
+            displayFormats: {
+              'millisecond': 'MMM DD',
+              'second': 'MMM DD',
+              'minute': 'MMM DD',
+              'hour': 'MMM DD',
+              'day': 'MMM DD',
+              'week': 'MMM DD',
+              'month': 'MMM DD',
+              'quarter': 'MMM DD',
+              'year': 'MMM DD',
             }
-          }],
-          yAxes: [{
-            gridLines: {
-              color: 'rgba(200, 200, 200, 0.5)'
-            },
-            ticks: {
-              min: 0,
-              beginAtZero: true
-            }
-          }]
-        }
+          },
+          gridLines: {
+            color: 'rgba(200, 200, 200, 0.5)'
+          }
+        }],
+        yAxes: [{
+          gridLines: {
+            color: 'rgba(200, 200, 200, 0.5)'
+          },
+          ticks: {
+            min: 0,
+            beginAtZero: true
+          }
+        }]
       }
-    );
+    });
+    const timeStart = ref<string | null>(null);
+    const changeTimeRange = () => {
+    };
     setTimeout(async () => {
       const response = await fetch(context.env.apiUrl + '/clm/lag');
       let responseArray: CalculationLagRow[] = JSON.parse(await response.text());
@@ -78,7 +98,9 @@ export default defineComponent({
     }, 1000);
     return {
       chartData,
-      chartOptions
+      chartOptions,
+      timeStart,
+      changeTimeRange
     };
   },
 });
