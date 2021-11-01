@@ -10,11 +10,12 @@
             readonly
             v-bind="attrs"
             v-on="on"
+            clearable
+            @change="changeTimeRange"
           ></v-text-field>
         </template>
         <v-date-picker
           v-model="timeStart"
-          :active-picker.sync="activePicker"
           @change="changeTimeRange"
         ></v-date-picker>
       </v-menu>
@@ -28,6 +29,8 @@
 <script lang="ts">
 import { defineComponent, ref, useContext } from '@nuxtjs/composition-api';
 import lodash from 'lodash';
+import { DateTime } from 'luxon';
+import { buildParametersString } from '../url';
 
 interface CalculationLagItem {
   Min: number;
@@ -79,11 +82,15 @@ export default defineComponent({
         }]
       }
     });
-    const timeStart = ref<string | null>(null);
+    const timeStart = ref<string | null>(DateTime.now().minus({days: 7}).toFormat('yyyy-MM-dd'));
     const changeTimeRange = () => {
     };
-    setTimeout(async () => {
-      const response = await fetch(context.env.apiUrl + '/clm/lag');
+    const load = async () => {
+      const params: { [key: string]: string } = {};
+      if (timeStart.value && timeStart.value.length)
+        params['start'] = '' + DateTime.fromFormat(timeStart.value, 'yyyy-MM-dd').toMillis();
+      const url = context.env.apiUrl + '/clm/lag' + buildParametersString(params);
+      const response = await fetch(url);
       let responseArray: CalculationLagRow[] = JSON.parse(await response.text());
       responseArray = lodash.sortBy(responseArray, row => new Date(row.Time));
       const data = responseArray.map(a => ({ x: new Date(a.Time), y: a.Cheap.Average / 1000_000_000 }));
@@ -95,7 +102,9 @@ export default defineComponent({
           backgroundColor: 'rgba(200, 200, 200, 0.5)'
         }]
       };
-    }, 1000);
+    };
+    load();
+    setTimeout(load, 60 * 1000);
     return {
       chartData,
       chartOptions,
