@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"sort"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -16,6 +17,11 @@ type CalculationLagInfoRowResponseBuilder struct {
 	Rows map[int64]*CalculationLagInfoRow
 }
 
+type CalculationLagAggregatedRows struct {
+	Rows             []*CalculationLagInfoRow
+	AggregationLevel TimeMeasurementUnit
+}
+
 func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx) error {
 	builder.Rows = make(map[int64]*CalculationLagInfoRow)
 	cursor := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES).Cursor()
@@ -27,15 +33,14 @@ func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx)
 		key, value = cursor.First()
 	}
 	for key != nil {
-		if value != nil {
+		keyIsInRange := (builder.StartUnixMillis <= 0 || builder.StartUnixMillis <= BytesToInt64(key)) &&
+			(builder.EndUnixMillis <= 0 || BytesToInt64(key) < builder.EndUnixMillis)
+		if value != nil && keyIsInRange {
 			row := &CalculationLagInfoRow{}
 			row.Read(bytes.NewBuffer(value))
 			builder.addRow(row)
 		}
 		key, value = cursor.Next()
-		if builder.EndUnixMillis != 0 && !(BytesToInt64(key) < builder.EndUnixMillis) {
-			break
-		}
 	}
 	return nil
 }
@@ -66,5 +71,14 @@ func (builder *CalculationLagInfoRowResponseBuilder) GetRowArray() []*Calculatio
 	for _, item := range builder.Rows {
 		array = append(array, item)
 	}
+	sort.Slice(array, func(i int, j int) bool {
+		return array[i].Time.Before(array[j].Time)
+	})
 	return array
+}
+
+func (builder *CalculationLagInfoRowResponseBuilder) GetResponse() (result CalculationLagAggregatedRows) {
+	result.Rows = builder.GetRowArray()
+	result.AggregationLevel = builder.AggregationLevel
+	return
 }

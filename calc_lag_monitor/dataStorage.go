@@ -38,11 +38,11 @@ func (storage *DataStorage) SaveCalculationLagInfoRow(row *CalculationLagInfoRow
 	})
 }
 
-func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, endUnixMillis int64) []*CalculationLagInfoRow {
+func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, endUnixMillis int64) CalculationLagAggregatedRows {
 	builder := &CalculationLagInfoRowResponseBuilder{
 		StartUnixMillis: startUnixMillis, EndUnixMillis: endUnixMillis}
 	storage.db.View(builder.Build)
-	return builder.GetRowArray()
+	return builder.GetResponse()
 }
 
 func (storage *DataStorage) Close() {

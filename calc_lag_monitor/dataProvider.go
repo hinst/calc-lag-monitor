@@ -15,7 +15,7 @@ func (provider *DataProvider) Register() {
 func (provider *DataProvider) Lag(responseWriter http.ResponseWriter, request *http.Request) {
 	start := ParseIntOr0(request.URL.Query().Get("start"))
 	end := ParseIntOr0(request.URL.Query().Get("end"))
-	rows := provider.Storage.ReadCalculationLagInfoRows(start, end)
+	aggregatedRows := provider.Storage.ReadCalculationLagInfoRows(start, end)
 	AddJsonHeader(responseWriter.Header())
-	responseWriter.Write(EncodeJson(rows))
+	responseWriter.Write(EncodeJson(aggregatedRows))
 }
