@@ -11,6 +11,10 @@ type DataStorage struct {
 	db *bolt.DB
 }
 
+type DataStorageStatistics struct {
+	CountOfCalculationLagRecords int
+}
+
 const DATA_STORAGE_FILE_PATH = "./data.db"
 const CALCULATION_LAG_INFO_ROW_BUCKET_NAME = "CalculationLagInfoRow"
 const PERMISSION_EVERYBODY_READ_WRITE = 0666
@@ -38,11 +42,25 @@ func (storage *DataStorage) SaveCalculationLagInfoRow(row *CalculationLagInfoRow
 	})
 }
 
-func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, endUnixMillis int64) CalculationLagAggregatedRows {
+func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, endUnixMillis int64,
+) CalculationLagAggregatedRows {
 	builder := &CalculationLagInfoRowResponseBuilder{
 		StartUnixMillis: startUnixMillis, EndUnixMillis: endUnixMillis}
 	storage.db.View(builder.Build)
 	return builder.GetResponse()
+}
+
+func (storage *DataStorage) GetStatistics() (result DataStorageStatistics) {
+	storage.db.View(func(transaction *bolt.Tx) error {
+		cursor := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES).Cursor()
+		key, _ := cursor.First()
+		for key != nil {
+			result.CountOfCalculationLagRecords += 1
+			key, _ = cursor.Next()
+		}
+		return nil
+	})
+	return
 }
 
 func (storage *DataStorage) Close() {

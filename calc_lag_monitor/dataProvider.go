@@ -10,6 +10,7 @@ type DataProvider struct {
 
 func (provider *DataProvider) Register() {
 	HandleFunc("/lag", provider.Lag)
+	HandleFunc("/dbStats", provider.DbStats)
 }
 
 func (provider *DataProvider) Lag(responseWriter http.ResponseWriter, request *http.Request) {
@@ -18,4 +19,9 @@ func (provider *DataProvider) Lag(responseWriter http.ResponseWriter, request *h
 	aggregatedRows := provider.Storage.ReadCalculationLagInfoRows(start, end)
 	AddJsonHeader(responseWriter.Header())
 	responseWriter.Write(EncodeJson(aggregatedRows))
+}
+
+func (provider *DataProvider) DbStats(responseWriter http.ResponseWriter, request *http.Request) {
+	AddJsonHeader(responseWriter.Header())
+	responseWriter.Write(EncodeJson(provider.Storage.GetStatistics()))
 }
