@@ -54,7 +54,9 @@ func (builder *CalculationLagInfoRowsBuilder) addRow(row *CalculationLagInfoRow)
 	rowTime := TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
 	existingRow := builder.Rows[rowTime]
 	if existingRow != nil {
-		builder.Rows[rowTime].Aggregate(row.GetExPtr())
+		existingRow.Aggregate(row.GetExPtr())
+	} else {
+		builder.Rows[rowTime] = row.GetExPtr()
 	}
 	for len(builder.Rows) > OUTPUT_ROW_COUNT_LIMIT {
 		builder.AggregationLevel = builder.AggregationLevel.GetNextOrFail()
@@ -81,7 +83,7 @@ func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
 func (builder *CalculationLagInfoRowsBuilder) GetRowArray() []*CalculationLagInfoRow {
 	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
 	for _, item := range builder.Rows {
-		array = append(array, item)
+		array = append(array, &item.CalculationLagInfoRow)
 	}
 	sort.Slice(array, func(i int, j int) bool {
 		return array[i].Time.Before(array[j].Time)
