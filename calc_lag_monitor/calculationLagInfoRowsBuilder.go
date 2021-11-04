@@ -7,7 +7,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-type CalculationLagInfoRowResponseBuilder struct {
+type CalculationLagInfoRowsBuilder struct {
 	// Inputs
 	StartUnixMillis int64
 	EndUnixMillis   int64
@@ -22,7 +22,7 @@ type CalculationLagAggregatedRows struct {
 	AggregationLevel TimeMeasurementUnit
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx) error {
+func (builder *CalculationLagInfoRowsBuilder) Build(transaction *bolt.Tx) error {
 	builder.Rows = make(map[int64]*CalculationLagInfoRow)
 	bucket := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
 	if nil == bucket {
@@ -49,7 +49,7 @@ func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx)
 	return nil
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) addRow(row *CalculationLagInfoRow) {
+func (builder *CalculationLagInfoRowsBuilder) addRow(row *CalculationLagInfoRow) {
 	rowTime := TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
 	builder.Rows[rowTime] = row
 	for len(builder.Rows) > OUTPUT_ROW_COUNT_LIMIT {
@@ -58,7 +58,7 @@ func (builder *CalculationLagInfoRowResponseBuilder) addRow(row *CalculationLagI
 	}
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) collapseRows() {
+func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
 	multiRows := make(map[int64][]*CalculationLagInfoRow)
 	for rowTime, row := range builder.Rows {
 		rowTime = TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
@@ -70,7 +70,7 @@ func (builder *CalculationLagInfoRowResponseBuilder) collapseRows() {
 	}
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) GetRowArray() []*CalculationLagInfoRow {
+func (builder *CalculationLagInfoRowsBuilder) GetRowArray() []*CalculationLagInfoRow {
 	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
 	for _, item := range builder.Rows {
 		array = append(array, item)
@@ -81,7 +81,7 @@ func (builder *CalculationLagInfoRowResponseBuilder) GetRowArray() []*Calculatio
 	return array
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) GetResponse() (result CalculationLagAggregatedRows) {
+func (builder *CalculationLagInfoRowsBuilder) GetResponse() (result CalculationLagAggregatedRows) {
 	result.Rows = builder.GetRowArray()
 	result.AggregationLevel = builder.AggregationLevel
 	return
