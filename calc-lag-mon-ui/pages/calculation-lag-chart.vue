@@ -100,8 +100,6 @@ export default defineComponent({
       }
     });
     const timeStart = ref<string | null>(DateTime.now().minus({days: 7}).toFormat('yyyy-MM-dd'));
-    const changeTimeRange = () => {
-    };
     const load = async () => {
       const params: { [key: string]: string } = {};
       if (timeStart.value && timeStart.value.length)
@@ -121,6 +119,9 @@ export default defineComponent({
           backgroundColor: 'rgba(200, 200, 200, 0.5)'
         }]
       };
+    };
+    const changeTimeRange = () => {
+      load();
     };
     load();
     setTimeout(load, 60 * 1000);
