@@ -24,7 +24,7 @@
       <CalculationLagChart :height="500" :chart-data="chartData" :options="chartOptions" />
     </div>
     <div v-if="aggregationLevelText">
-      Current aggregation level: {{aggregationLevelText}}
+      Current aggregation level: {{aggregationLevelText}} | Count of points: {{ countOfPoints }}
     </div>
   </div>
 </template>
@@ -65,6 +65,7 @@ export default defineComponent({
     const context = useContext();
     const chartData = ref<any>(null);
     const aggregationLevelText = ref<string | null>(null);
+    const countOfPoints = ref<number | null>(null);
     const chartOptions = ref<any>({
       responsive: true,
       maintainAspectRatio: false,
@@ -109,6 +110,7 @@ export default defineComponent({
       const responseObject = JSON.parse(await response.text());
       aggregationLevelText.value = getAggregationLevelTitle(responseObject.AggregationLevel);
       let responseArray: CalculationLagRow[] = responseObject.Rows;
+      countOfPoints.value = responseArray.length;
       responseArray = lodash.sortBy(responseArray, row => new Date(row.Time));
       const data = responseArray.map(a => ({ x: new Date(a.Time), y: a.Cheap.Average / 1000_000_000 }));
       chartData.value = {
@@ -127,8 +129,9 @@ export default defineComponent({
     setTimeout(load, 60 * 1000);
     return {
       chartData,
-      aggregationLevelText,
       chartOptions,
+      aggregationLevelText,
+      countOfPoints,
       timeStart,
       changeTimeRange,
     };
