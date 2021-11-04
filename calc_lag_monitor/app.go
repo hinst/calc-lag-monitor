@@ -4,18 +4,24 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 )
 
 type App struct {
-	Storage  *DataStorage
-	Monitor  *CalculationLogMonitor
-	Provider *DataProvider
-	Exiting  chan bool
+	Configuration Configuration
+	Storage       *DataStorage
+	Monitor       *CalculationLogMonitor
+	Provider      *DataProvider
+	Exiting       chan bool
 }
 
 func (app *App) Run() {
+	app.Configuration = LoadConfiguration()
 	app.InitializeStorage()
-	app.InitializeMonitor()
+	log.Println("Sampling enabled: " + strconv.FormatBool(app.Configuration.SamplingEnabled))
+	if app.Configuration.SamplingEnabled {
+		app.InitializeMonitor()
+	}
 	app.InitializeProvider()
 	app.InitializeWebUi()
 	app.StartWebServer()
@@ -45,7 +51,7 @@ func (app *App) InitializeStorage() {
 func (app *App) InitializeMonitor() {
 	if app.Monitor == nil {
 		app.Monitor = &CalculationLogMonitor{
-			Configuration: LoadConfiguration(),
+			Configuration: app.Configuration,
 			Storage:       app.Storage,
 			LogEnabled:    true,
 		}
