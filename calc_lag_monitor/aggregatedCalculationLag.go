@@ -38,28 +38,35 @@ func (lag *AggregatedCalculationLag) ReadFromRequest(request *AggregatedCalculat
 	lag.Max = now.Sub(request.Max)
 }
 
+func (lag *AggregatedCalculationLag) GetEx() (result AggregatedCalculationLagEx) {
+	result.AggregatedCalculationLag = *lag
+	result.Count = 1
+	result.Sum = float64(lag.Average)
+	return
+}
+
+func (lag *AggregatedCalculationLag) Clone() (result AggregatedCalculationLag) {
+	result.Min = lag.Min
+	result.Average = lag.Average
+	result.Max = lag.Max
+	return
+}
+
 type AggregatedCalculationLagEx struct {
 	AggregatedCalculationLag
 	Count int
 	Sum   float64
 }
 
-func (lag *AggregatedCalculationLagEx) InitializeAggregation(firstItem AggregatedCalculationLag) {
-	lag.Min = firstItem.Min
-	lag.Max = firstItem.Max
-	lag.Count = 0
-	lag.Sum = 0
-}
-
-func (lag *AggregatedCalculationLagEx) Aggregate(item AggregatedCalculationLag) {
+func (lag *AggregatedCalculationLagEx) Aggregate(item AggregatedCalculationLagEx) {
 	if item.Min < lag.Min {
 		lag.Min = item.Min
 	}
-	lag.Sum += float64(item.Average)
 	if lag.Max < item.Max {
 		lag.Max = item.Max
 	}
-	lag.Count += 1
+	lag.Count += item.Count
+	lag.Sum += item.Sum
 }
 
 func (lag *AggregatedCalculationLagEx) FinalizeAggregation() AggregatedCalculationLag {
@@ -69,4 +76,11 @@ func (lag *AggregatedCalculationLagEx) FinalizeAggregation() AggregatedCalculati
 		)
 	}
 	return lag.AggregatedCalculationLag
+}
+
+func (lag *AggregatedCalculationLagEx) Clone() (result AggregatedCalculationLagEx) {
+	result.AggregatedCalculationLag = lag.AggregatedCalculationLag.Clone()
+	result.Count = lag.Count
+	result.Sum = lag.Sum
+	return
 }

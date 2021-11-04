@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"sort"
+	"time"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -14,7 +15,7 @@ type CalculationLagInfoRowsBuilder struct {
 
 	AggregationLevel TimeMeasurementUnit
 	// Outputs
-	Rows map[int64]*CalculationLagInfoRow
+	Rows map[int64]*CalculationLagInfoRowEx
 }
 
 type CalculationLagAggregatedRows struct {
@@ -23,7 +24,7 @@ type CalculationLagAggregatedRows struct {
 }
 
 func (builder *CalculationLagInfoRowsBuilder) Build(transaction *bolt.Tx) error {
-	builder.Rows = make(map[int64]*CalculationLagInfoRow)
+	builder.Rows = make(map[int64]*CalculationLagInfoRowEx)
 	bucket := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
 	if nil == bucket {
 		return nil
@@ -51,7 +52,10 @@ func (builder *CalculationLagInfoRowsBuilder) Build(transaction *bolt.Tx) error 
 
 func (builder *CalculationLagInfoRowsBuilder) addRow(row *CalculationLagInfoRow) {
 	rowTime := TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
-	builder.Rows[rowTime] = row
+	existingRow := builder.Rows[rowTime]
+	if existingRow != nil {
+		builder.Rows[rowTime].Aggregate(row.GetExPtr())
+	}
 	for len(builder.Rows) > OUTPUT_ROW_COUNT_LIMIT {
 		builder.AggregationLevel = builder.AggregationLevel.GetNextOrFail()
 		builder.collapseRows()
@@ -59,14 +63,18 @@ func (builder *CalculationLagInfoRowsBuilder) addRow(row *CalculationLagInfoRow)
 }
 
 func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
-	multiRows := make(map[int64][]*CalculationLagInfoRow)
+	println("cR", builder.AggregationLevel)
+	multiRows := make(map[int64][]*CalculationLagInfoRowEx)
 	for rowTime, row := range builder.Rows {
 		rowTime = TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
 		multiRows[rowTime] = append(multiRows[rowTime], row)
 	}
-	builder.Rows = make(map[int64]*CalculationLagInfoRow)
+	builder.Rows = make(map[int64]*CalculationLagInfoRowEx)
 	for rowTime, rows := range multiRows {
 		builder.Rows[rowTime] = AggregateCalculationLagInfoRows(rows)
+		if time.UnixMilli(rowTime).Day() == 4 {
+			println(time.UnixMilli(rowTime).String(), builder.Rows[rowTime].Time.String())
+		}
 	}
 }
 

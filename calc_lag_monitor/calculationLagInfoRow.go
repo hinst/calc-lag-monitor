@@ -38,16 +38,42 @@ func (row *CalculationLagInfoRow) String() string {
 		row.Cheap.Average.String() + " " + row.Expensive.Average.String()
 }
 
-func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRow) *CalculationLagInfoRow {
+func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRowEx) *CalculationLagInfoRowEx {
 	if len(rows) <= 0 {
 		return nil
 	}
-	var aggregator CalculationLagInfoRowEx
-	aggregator.InitializeAggregation(rows[0])
+	var aggregator *CalculationLagInfoRowEx
 	for _, item := range rows {
-		aggregator.Aggregate(item)
+		if aggregator == nil {
+			aggregator = item.ClonePtr()
+		} else {
+			aggregator.Aggregate(item)
+		}
 	}
-	result := aggregator.FinalizeAggregation()
+	return aggregator
+}
+
+func (row *CalculationLagInfoRow) GetEx() (result CalculationLagInfoRowEx) {
+	result.CalculationLagInfoRow = row.Clone()
+	result.Cheap.AggregatedCalculationLag = row.Cheap.Clone()
+	result.Expensive.AggregatedCalculationLag = row.Expensive.Clone()
+	return
+}
+
+func (row *CalculationLagInfoRow) GetExPtr() *CalculationLagInfoRowEx {
+	result := row.GetEx()
+	return &result
+}
+
+func (row *CalculationLagInfoRow) Clone() (result CalculationLagInfoRow) {
+	result.Time = row.Time
+	result.Cheap = row.Cheap.Clone()
+	result.Expensive = row.Expensive.Clone()
+	return
+}
+
+func (row *CalculationLagInfoRow) ClonePtr() *CalculationLagInfoRow {
+	result := row.Clone()
 	return &result
 }
 
@@ -57,13 +83,7 @@ type CalculationLagInfoRowEx struct {
 	Expensive AggregatedCalculationLagEx
 }
 
-func (row *CalculationLagInfoRowEx) InitializeAggregation(firstItem *CalculationLagInfoRow) {
-	row.Time = firstItem.Time
-	row.Cheap.InitializeAggregation(firstItem.Cheap)
-	row.Expensive.InitializeAggregation(firstItem.Expensive)
-}
-
-func (row *CalculationLagInfoRowEx) Aggregate(item *CalculationLagInfoRow) {
+func (row *CalculationLagInfoRowEx) Aggregate(item *CalculationLagInfoRowEx) {
 	if item.Time.Before(row.Time) {
 		row.Time = item.Time
 	}
@@ -75,4 +95,16 @@ func (row *CalculationLagInfoRowEx) FinalizeAggregation() CalculationLagInfoRow 
 	row.CalculationLagInfoRow.Cheap = row.Cheap.FinalizeAggregation()
 	row.CalculationLagInfoRow.Expensive = row.Expensive.FinalizeAggregation()
 	return row.CalculationLagInfoRow
+}
+
+func (row *CalculationLagInfoRowEx) Clone() (result CalculationLagInfoRowEx) {
+	result.CalculationLagInfoRow = row.CalculationLagInfoRow.Clone()
+	result.Cheap = row.Cheap.Clone()
+	result.Expensive = row.Expensive.Clone()
+	return
+}
+
+func (row *CalculationLagInfoRowEx) ClonePtr() *CalculationLagInfoRowEx {
+	result := row.Clone()
+	return &result
 }
