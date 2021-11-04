@@ -24,7 +24,11 @@ type CalculationLagAggregatedRows struct {
 
 func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx) error {
 	builder.Rows = make(map[int64]*CalculationLagInfoRow)
-	cursor := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES).Cursor()
+	bucket := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
+	if nil == bucket {
+		return nil
+	}
+	cursor := bucket.Cursor()
 	var key []byte
 	var value []byte
 	if builder.StartUnixMillis != 0 {
