@@ -30,7 +30,7 @@ type CalculationLogMonitor struct {
 func (monitor *CalculationLogMonitor) Start() {
 	if monitor.Interval == 0 {
 		monitor.Interval = time.Second *
-			time.Duration(monitor.Configuration.CalculationLagMonitorSamplingIntervalSeconds)
+			time.Duration(monitor.Configuration.SamplingIntervalSeconds)
 	}
 	monitor.ticker.Initialize(monitor.Interval)
 	if monitor.Finished == nil {

@@ -6,10 +6,10 @@ import (
 )
 
 type Configuration struct {
-	MongoDbUrl  string `json:"mongoDbUrl"`
-	MongoDbName string `json:"mongoDbName"`
-
-	CalculationLagMonitorSamplingIntervalSeconds int `json:"calculationLagMonitorSamplingIntervalSeconds"`
+	MongoDbUrl              string `json:"mongoDbUrl"`
+	MongoDbName             string `json:"mongoDbName"`
+	SamplingIntervalSeconds int    `json:"samplingIntervalSeconds"`
+	SamplingEnabled         bool   `json:"samplingEnabled"`
 }
 
 const configurationFilePath = "./configuration.json"
@@ -25,5 +25,5 @@ func LoadConfiguration() Configuration {
 }
 
 func (configuration *Configuration) SetDefault() {
-	configuration.CalculationLagMonitorSamplingIntervalSeconds = 60
+	configuration.SamplingIntervalSeconds = 60
 }
