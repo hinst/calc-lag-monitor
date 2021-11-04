@@ -3,18 +3,19 @@ package main
 import (
 	"bytes"
 	"sort"
+	"time"
 
 	bolt "go.etcd.io/bbolt"
 )
 
-type CalculationLagInfoRowResponseBuilder struct {
+type CalculationLagInfoRowsBuilder struct {
 	// Inputs
 	StartUnixMillis int64
 	EndUnixMillis   int64
 
 	AggregationLevel TimeMeasurementUnit
 	// Outputs
-	Rows map[int64]*CalculationLagInfoRow
+	Rows map[int64]*CalculationLagInfoRowEx
 }
 
 type CalculationLagAggregatedRows struct {
@@ -22,9 +23,13 @@ type CalculationLagAggregatedRows struct {
 	AggregationLevel TimeMeasurementUnit
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx) error {
-	builder.Rows = make(map[int64]*CalculationLagInfoRow)
-	cursor := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES).Cursor()
+func (builder *CalculationLagInfoRowsBuilder) Build(transaction *bolt.Tx) error {
+	builder.Rows = make(map[int64]*CalculationLagInfoRowEx)
+	bucket := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
+	if nil == bucket {
+		return nil
+	}
+	cursor := bucket.Cursor()
 	var key []byte
 	var value []byte
 	if builder.StartUnixMillis != 0 {
@@ -45,28 +50,35 @@ func (builder *CalculationLagInfoRowResponseBuilder) Build(transaction *bolt.Tx)
 	return nil
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) addRow(row *CalculationLagInfoRow) {
+func (builder *CalculationLagInfoRowsBuilder) addRow(row *CalculationLagInfoRow) {
 	rowTime := TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
-	builder.Rows[rowTime] = row
+	existingRow := builder.Rows[rowTime]
+	if existingRow != nil {
+		builder.Rows[rowTime].Aggregate(row.GetExPtr())
+	}
 	for len(builder.Rows) > OUTPUT_ROW_COUNT_LIMIT {
 		builder.AggregationLevel = builder.AggregationLevel.GetNextOrFail()
 		builder.collapseRows()
 	}
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) collapseRows() {
-	multiRows := make(map[int64][]*CalculationLagInfoRow)
+func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
+	println("cR", builder.AggregationLevel)
+	multiRows := make(map[int64][]*CalculationLagInfoRowEx)
 	for rowTime, row := range builder.Rows {
 		rowTime = TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
 		multiRows[rowTime] = append(multiRows[rowTime], row)
 	}
-	builder.Rows = make(map[int64]*CalculationLagInfoRow)
+	builder.Rows = make(map[int64]*CalculationLagInfoRowEx)
 	for rowTime, rows := range multiRows {
 		builder.Rows[rowTime] = AggregateCalculationLagInfoRows(rows)
+		if time.UnixMilli(rowTime).Day() == 4 {
+			println(time.UnixMilli(rowTime).String(), builder.Rows[rowTime].Time.String())
+		}
 	}
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) GetRowArray() []*CalculationLagInfoRow {
+func (builder *CalculationLagInfoRowsBuilder) GetRowArray() []*CalculationLagInfoRow {
 	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
 	for _, item := range builder.Rows {
 		array = append(array, item)
@@ -77,7 +89,7 @@ func (builder *CalculationLagInfoRowResponseBuilder) GetRowArray() []*Calculatio
 	return array
 }
 
-func (builder *CalculationLagInfoRowResponseBuilder) GetResponse() (result CalculationLagAggregatedRows) {
+func (builder *CalculationLagInfoRowsBuilder) GetResponse() (result CalculationLagAggregatedRows) {
 	result.Rows = builder.GetRowArray()
 	result.AggregationLevel = builder.AggregationLevel
 	return
