@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <div style="max-width: 160px">
+      <div style="max-width: 160px; display: inline-block">
         <v-menu>
           <template v-slot:activator="{ on, attrs }">
             <v-text-field
@@ -18,6 +18,28 @@
           <v-date-picker
             v-model="timeStart"
             @change="changeTimeRange"
+            color="cyan"
+          ></v-date-picker>
+        </v-menu>
+      </div>
+      <div style="max-width: 160px; display: inline-block">
+        <v-menu>
+          <template v-slot:activator="{ on, attrs }">
+            <v-text-field
+              v-model="timeEnd"
+              label="To"
+              prepend-icon="mdi-calendar"
+              readonly
+              v-bind="attrs"
+              v-on="on"
+              clearable
+              @change="changeTimeRange"
+            ></v-text-field>
+          </template>
+          <v-date-picker
+            v-model="timeEnd"
+            @change="changeTimeRange"
+            color="cyan"
           ></v-date-picker>
         </v-menu>
       </div>
@@ -103,10 +125,13 @@ export default defineComponent({
       }
     });
     const timeStart = ref<string | null>(DateTime.now().minus({days: 7}).toFormat('yyyy-MM-dd'));
+    const timeEnd = ref<string | null>(DateTime.now().toFormat('yyyy-MM-dd'));
     const load = async () => {
       const params: { [key: string]: string } = {};
       if (timeStart.value && timeStart.value.length)
         params['start'] = '' + DateTime.fromFormat(timeStart.value, 'yyyy-MM-dd').toMillis();
+      if (timeEnd.value && timeEnd.value.length)
+        params['end'] = '' + DateTime.fromFormat(timeEnd.value, 'yyyy-MM-dd').toMillis();
       const url = context.env.apiUrl + '/clm/lag' + buildParametersString(params);
       const response = await fetch(url);
       const responseObject = JSON.parse(await response.text());
@@ -135,6 +160,7 @@ export default defineComponent({
       aggregationLevelText,
       countOfPoints,
       timeStart,
+      timeEnd,
       changeTimeRange,
     };
   },
