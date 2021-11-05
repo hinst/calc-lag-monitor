@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"sort"
-	"time"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -65,7 +64,6 @@ func (builder *CalculationLagInfoRowsBuilder) addRow(row *CalculationLagInfoRow)
 }
 
 func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
-	println("cR", builder.AggregationLevel)
 	multiRows := make(map[int64][]*CalculationLagInfoRowEx)
 	for rowTime, row := range builder.Rows {
 		rowTime = TruncateTime(row.Time, builder.AggregationLevel).UnixMilli()
@@ -74,20 +72,21 @@ func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
 	builder.Rows = make(map[int64]*CalculationLagInfoRowEx)
 	for rowTime, rows := range multiRows {
 		builder.Rows[rowTime] = AggregateCalculationLagInfoRows(rows)
-		if time.UnixMilli(rowTime).Day() == 4 {
-			println(time.UnixMilli(rowTime).String(), builder.Rows[rowTime].Time.String())
-		}
 	}
 }
 
 func (builder *CalculationLagInfoRowsBuilder) GetRowArray() []*CalculationLagInfoRow {
-	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
-	for _, item := range builder.Rows {
-		array = append(array, &item.CalculationLagInfoRow)
+	arrayEx := make([]*CalculationLagInfoRowEx, 0, len(builder.Rows))
+	for _, rowEx := range builder.Rows {
+		arrayEx = append(arrayEx, rowEx)
 	}
-	sort.Slice(array, func(i int, j int) bool {
-		return array[i].Time.Before(array[j].Time)
+	sort.Slice(arrayEx, func(i int, j int) bool {
+		return arrayEx[i].Time.Before(arrayEx[j].Time)
 	})
+	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
+	for _, row := range arrayEx {
+		array = append(array, row.FinalizeAggregation())
+	}
 	return array
 }
 

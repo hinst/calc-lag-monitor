@@ -55,8 +55,8 @@ func AggregateCalculationLagInfoRows(rows []*CalculationLagInfoRowEx) *Calculati
 
 func (row *CalculationLagInfoRow) GetEx() (result CalculationLagInfoRowEx) {
 	result.CalculationLagInfoRow = row.Clone()
-	result.Cheap.AggregatedCalculationLag = row.Cheap.Clone()
-	result.Expensive.AggregatedCalculationLag = row.Expensive.Clone()
+	result.Cheap = row.Cheap.GetEx()
+	result.Expensive = row.Expensive.GetEx()
 	return
 }
 
@@ -91,10 +91,10 @@ func (row *CalculationLagInfoRowEx) Aggregate(item *CalculationLagInfoRowEx) {
 	row.Expensive.Aggregate(item.Expensive)
 }
 
-func (row *CalculationLagInfoRowEx) FinalizeAggregation() CalculationLagInfoRow {
+func (row *CalculationLagInfoRowEx) FinalizeAggregation() *CalculationLagInfoRow {
 	row.CalculationLagInfoRow.Cheap = row.Cheap.FinalizeAggregation()
 	row.CalculationLagInfoRow.Expensive = row.Expensive.FinalizeAggregation()
-	return row.CalculationLagInfoRow
+	return &row.CalculationLagInfoRow
 }
 
 func (row *CalculationLagInfoRowEx) Clone() (result CalculationLagInfoRowEx) {

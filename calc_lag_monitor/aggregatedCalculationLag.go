@@ -39,7 +39,7 @@ func (lag *AggregatedCalculationLag) ReadFromRequest(request *AggregatedCalculat
 }
 
 func (lag *AggregatedCalculationLag) GetEx() (result AggregatedCalculationLagEx) {
-	result.AggregatedCalculationLag = *lag
+	result.AggregatedCalculationLag = lag.Clone()
 	result.Count = 1
 	result.Sum = float64(lag.Average)
 	return
