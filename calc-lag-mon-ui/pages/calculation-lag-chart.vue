@@ -1,24 +1,26 @@
 <template>
   <div>
     <div>
-      <v-menu>
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
+      <div style="max-width: 160px">
+        <v-menu>
+          <template v-slot:activator="{ on, attrs }">
+            <v-text-field
+              v-model="timeStart"
+              label="From"
+              prepend-icon="mdi-calendar"
+              readonly
+              v-bind="attrs"
+              v-on="on"
+              clearable
+              @change="changeTimeRange"
+            ></v-text-field>
+          </template>
+          <v-date-picker
             v-model="timeStart"
-            label="From"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-            clearable
             @change="changeTimeRange"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="timeStart"
-          @change="changeTimeRange"
-        ></v-date-picker>
-      </v-menu>
+          ></v-date-picker>
+        </v-menu>
+      </div>
     </div>
     <div v-if="chartData" style="max-width: 100%">
       <CalculationLagChart :height="500" :chart-data="chartData" :options="chartOptions" />
