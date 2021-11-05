@@ -147,7 +147,9 @@ export default defineComponent({
         datasets: [{
           label: 'average cheap',
           data: data,
-          backgroundColor: 'rgba(200, 200, 200, 0.5)'
+          backgroundColor: 'rgba(0, 128, 0, 1)',
+          borderColor: 'rgba(0, 200, 0, 0.5)',
+          fill: false
         }]
       };
     };
