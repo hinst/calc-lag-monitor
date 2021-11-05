@@ -76,17 +76,13 @@ func (builder *CalculationLagInfoRowsBuilder) collapseRows() {
 }
 
 func (builder *CalculationLagInfoRowsBuilder) GetRowArray() []*CalculationLagInfoRow {
-	arrayEx := make([]*CalculationLagInfoRowEx, 0, len(builder.Rows))
-	for _, rowEx := range builder.Rows {
-		arrayEx = append(arrayEx, rowEx)
-	}
-	sort.Slice(arrayEx, func(i int, j int) bool {
-		return arrayEx[i].Time.Before(arrayEx[j].Time)
-	})
 	array := make([]*CalculationLagInfoRow, 0, len(builder.Rows))
-	for _, row := range arrayEx {
-		array = append(array, row.FinalizeAggregation())
+	for _, rowEx := range builder.Rows {
+		array = append(array, rowEx.FinalizeAggregation())
 	}
+	sort.Slice(array, func(i int, j int) bool {
+		return array[i].Time.Before(array[j].Time)
+	})
 	return array
 }
 
