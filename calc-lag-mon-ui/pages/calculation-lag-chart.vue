@@ -7,12 +7,13 @@
             <v-text-field
               v-model="timeStart"
               label="From"
-              prepend-icon="mdi-calendar"
+              prepend-icon="mdi-calendar-arrow-left"
               readonly
               v-bind="attrs"
               v-on="on"
               clearable
               @change="changeTimeRange"
+              hide-details="true"
             ></v-text-field>
           </template>
           <v-date-picker
@@ -28,12 +29,13 @@
             <v-text-field
               v-model="timeEnd"
               label="To"
-              prepend-icon="mdi-calendar"
+              prepend-icon="mdi-calendar-arrow-right"
               readonly
               v-bind="attrs"
               v-on="on"
               clearable
               @change="changeTimeRange"
+              hide-details="true"
             ></v-text-field>
           </template>
           <v-date-picker
