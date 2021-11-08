@@ -58,8 +58,9 @@
 <script lang="ts">
 import { defineComponent, ref, useContext } from '@nuxtjs/composition-api';
 import lodash from 'lodash';
-import { DateTime } from 'luxon';
+import { DateTime, Duration } from 'luxon';
 import { buildParametersString } from '../url';
+import { ChartOptions, ChartTooltipItem } from 'chart.js';
 
 interface CalculationLagItem {
   Min: number;
@@ -92,9 +93,19 @@ export default defineComponent({
     const chartData = ref<any>(null);
     const aggregationLevelText = ref<string | null>(null);
     const countOfPoints = ref<number | null>(null);
-    const chartOptions = ref<any>({
+
+    const chartOptions = ref<ChartOptions>({
       responsive: true,
       maintainAspectRatio: false,
+      tooltips: {
+        callbacks: {
+          label: function(tooltipItem) {
+            if (typeof tooltipItem.yLabel == 'number')
+              return Duration.fromMillis(tooltipItem.yLabel * 1000).toFormat('hh:mm:ss');
+            return tooltipItem.label || '';
+          }
+        }
+      },
       scales: {
         xAxes: [{
           type: 'time',
@@ -121,14 +132,19 @@ export default defineComponent({
           },
           ticks: {
             min: 0,
-            beginAtZero: true
+            beginAtZero: true,
+            callback: function(value: any) {
+              return Duration.fromMillis(value * 1000).toFormat('hh:mm:ss');
+            }
           }
         }]
       }
     });
+
     const timeStart = ref<string | null>(DateTime.now().minus({days: 7}).toFormat('yyyy-MM-dd'));
     const timeEnd = ref<string | null>(DateTime.now().toFormat('yyyy-MM-dd'));
-    const load = async () => {
+
+    const read = async() => {
       const params: { [key: string]: string } = {};
       if (timeStart.value && timeStart.value.length)
         params['start'] = '' + DateTime.fromFormat(timeStart.value, 'yyyy-MM-dd').toMillis();
@@ -137,25 +153,42 @@ export default defineComponent({
       const url = context.env.apiUrl + '/clm/lag' + buildParametersString(params);
       const response = await fetch(url);
       const responseObject = JSON.parse(await response.text());
+      return responseObject;
+    };
+
+    const load = async() => {
+      const responseObject = await read();
       aggregationLevelText.value = getAggregationLevelTitle(responseObject.AggregationLevel);
       let responseArray: CalculationLagRow[] = responseObject.Rows;
       countOfPoints.value = responseArray.length;
       responseArray = lodash.sortBy(responseArray, row => new Date(row.Time));
-      const data = responseArray.map(a => ({ x: new Date(a.Time), y: a.Cheap.Average / 1000_000_000 }));
+      const cheapData = responseArray.map(a => ({ x: new Date(a.Time), y: a.Cheap.Average / 1000_000_000 }));
+      const expensiveData = responseArray.map(a => ({ x: new Date(a.Time), y: a.Expensive.Average / 1000_000_000 }));
       chartData.value = {
         labels: responseArray.map(a => new Date(a.Time)),
-        datasets: [{
-          label: 'average cheap',
-          data: data,
-          backgroundColor: 'rgba(0, 128, 0, 1)',
-          borderColor: 'rgba(0, 200, 0, 0.5)',
-          fill: false
-        }]
+        datasets: [
+          {
+            label: 'cheap',
+            data: cheapData,
+            backgroundColor: 'rgba(0, 180, 40, 1)',
+            borderColor: 'rgba(0, 180, 40, 0.5)',
+            fill: false
+          },
+          {
+            label: 'expensive',
+            data: expensiveData,
+            backgroundColor: 'rgba(255, 195, 0, 1)',
+            borderColor: 'rgba(255, 195, 0, 0.5)',
+            fill: false
+          }
+        ]
       };
     };
+
     const changeTimeRange = () => {
       load();
     };
+
     load();
     setTimeout(load, 60 * 1000);
     return {
