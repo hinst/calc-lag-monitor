@@ -1,0 +1,6 @@
+{
+    "mongoDbUrl": "mongodb://:27017",
+    "mongoDbName": "",
+    "boltDbFilePath": "/storage/data.db",
+    "samplingEnabled": true
+}
