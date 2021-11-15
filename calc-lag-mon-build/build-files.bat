@@ -10,7 +10,7 @@ call ..\calc_lag_monitor\build-linux.bat
 
 cd /D "%~dp0"
 echo "[ ] Build web UI..."
-set API_URL=http://localhost:3007
+set /p API_URL=<api-url.txt
 call ..\calc-lag-mon-ui\build.bat
 
 cd /D "%~dp0"
