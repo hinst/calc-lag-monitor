@@ -60,7 +60,7 @@ import { defineComponent, ref, useContext } from '@nuxtjs/composition-api';
 import lodash from 'lodash';
 import { DateTime, Duration } from 'luxon';
 import { buildParametersString } from '../url';
-import { ChartOptions, ChartTooltipItem } from 'chart.js';
+import { ChartOptions } from 'chart.js';
 
 interface CalculationLagItem {
   Min: number;
@@ -142,7 +142,7 @@ export default defineComponent({
     });
 
     const timeStart = ref<string | null>(DateTime.now().minus({days: 7}).toFormat('yyyy-MM-dd'));
-    const timeEnd = ref<string | null>(DateTime.now().toFormat('yyyy-MM-dd'));
+    const timeEnd = ref<string | null>(DateTime.now().plus({days: 1}).toFormat('yyyy-MM-dd'));
 
     const read = async() => {
       const params: { [key: string]: string } = {};
@@ -190,7 +190,7 @@ export default defineComponent({
     };
 
     load();
-    setTimeout(load, 60 * 1000);
+    setInterval(load, 60 * 1000);
     return {
       chartData,
       chartOptions,
