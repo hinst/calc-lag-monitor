@@ -8,6 +8,7 @@ import (
 type Configuration struct {
 	MongoDbUrl              string `json:"mongoDbUrl"`
 	MongoDbName             string `json:"mongoDbName"`
+	BoltDbFilePath          string `json:"boltDbFilePath"`
 	SamplingIntervalSeconds int    `json:"samplingIntervalSeconds"`
 	SamplingEnabled         bool   `json:"samplingEnabled"`
 }
@@ -25,5 +26,6 @@ func LoadConfiguration() Configuration {
 }
 
 func (configuration *Configuration) SetDefault() {
+	configuration.BoltDbFilePath = "./data.db"
 	configuration.SamplingIntervalSeconds = 60
 }

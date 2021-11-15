@@ -7,5 +7,6 @@ RUN mkdir /app
 COPY ./app /app
 
 EXPOSE 3006
-RUN ["chmod", "+x", "/app/calc_lag_monitor"]
-ENTRYPOINT ["/app/calc_lag_monitor"]
+
+WORKDIR /app/calc_lag_monitor
+ENTRYPOINT ["/app/calc_lag_monitor/compiled/calc_lag_monitor"]

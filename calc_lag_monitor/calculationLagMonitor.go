@@ -18,7 +18,7 @@ const trailingCalculationRequestsRatio = 0.1
 
 type CalculationLogMonitor struct {
 	Storage       *DataStorage
-	Configuration Configuration
+	Configuration *Configuration
 	IsRunning     bool
 	Url           string
 	Finished      chan bool

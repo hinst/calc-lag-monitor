@@ -43,7 +43,7 @@ func (app *App) Run() {
 
 func (app *App) InitializeStorage() {
 	if app.Storage == nil {
-		app.Storage = &DataStorage{}
+		app.Storage = &DataStorage{Configuration: &app.Configuration}
 		app.Storage.Open()
 	}
 }
@@ -51,7 +51,7 @@ func (app *App) InitializeStorage() {
 func (app *App) InitializeMonitor() {
 	if app.Monitor == nil {
 		app.Monitor = &CalculationLogMonitor{
-			Configuration: app.Configuration,
+			Configuration: &app.Configuration,
 			Storage:       app.Storage,
 			LogEnabled:    true,
 		}

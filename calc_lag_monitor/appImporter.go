@@ -10,17 +10,18 @@ import (
 )
 
 type AppImporter struct {
-	SourceDbFilePath string
+	DestinationDbFilePath string
+	SourceDbFilePath      string
 }
 
 func (importer *AppImporter) Run() {
 	if len(importer.SourceDbFilePath) == 0 {
 		panic(errors.New("need source db file path"))
 	}
-	mainDb, mainDbError := bolt.Open(DATA_STORAGE_FILE_PATH,
+	mainDb, mainDbError := bolt.Open(importer.DestinationDbFilePath,
 		PERMISSION_EVERYBODY_READ_WRITE,
 		&bolt.Options{Timeout: 30 * time.Second})
-	AssertWrapped(mainDbError, "Unable to open file "+DATA_STORAGE_FILE_PATH)
+	AssertWrapped(mainDbError, "Unable to open file "+importer.DestinationDbFilePath)
 
 	sourceDb, sourceDbError := bolt.Open(importer.SourceDbFilePath,
 		PERMISSION_EVERYBODY_READ_WRITE,

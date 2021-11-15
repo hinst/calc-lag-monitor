@@ -8,14 +8,14 @@ import (
 )
 
 type DataStorage struct {
-	db *bolt.DB
+	Configuration *Configuration
+	db            *bolt.DB
 }
 
 type DataStorageStatistics struct {
 	CountOfCalculationLagRecords int
 }
 
-const DATA_STORAGE_FILE_PATH = "./data.db"
 const CALCULATION_LAG_INFO_ROW_BUCKET_NAME = "CalculationLagInfoRow"
 const PERMISSION_EVERYBODY_READ_WRITE = 0666
 const OUTPUT_ROW_COUNT_LIMIT = 1000
@@ -23,10 +23,10 @@ const OUTPUT_ROW_COUNT_LIMIT = 1000
 var CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES = []byte(CALCULATION_LAG_INFO_ROW_BUCKET_NAME)
 
 func (storage *DataStorage) Open() {
-	db, err := bolt.Open(DATA_STORAGE_FILE_PATH,
+	db, err := bolt.Open(storage.Configuration.BoltDbFilePath,
 		PERMISSION_EVERYBODY_READ_WRITE,
 		&bolt.Options{Timeout: 30 * time.Second})
-	AssertWrapped(err, "Unable to open file "+DATA_STORAGE_FILE_PATH)
+	AssertWrapped(err, "Unable to open file "+storage.Configuration.BoltDbFilePath)
 	storage.db = db
 }
 

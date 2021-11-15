@@ -9,11 +9,13 @@ func main() {
 	println("STARTING...")
 	debug.SetGCPercent(50)
 	importEnabled := flag.Bool("import", false, "Import database file")
-	db := flag.String("db", "", "File path")
+	destination := flag.String("destination", "", "Destination file path")
+	source := flag.String("source", "", "Source file path")
 	flag.Parse()
 	if *importEnabled {
 		var appImporter AppImporter
-		appImporter.SourceDbFilePath = *db
+		appImporter.DestinationDbFilePath = *destination
+		appImporter.SourceDbFilePath = *source
 		appImporter.Run()
 	} else {
 		var app App
