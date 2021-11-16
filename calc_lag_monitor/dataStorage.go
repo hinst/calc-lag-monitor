@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"log"
+	"strconv"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -17,10 +19,12 @@ type DataStorageStatistics struct {
 }
 
 const CALCULATION_LAG_INFO_ROW_BUCKET_NAME = "CalculationLagInfoRow"
+const MIGRATION_BUCKET_NAME = "Migrations"
 const PERMISSION_EVERYBODY_READ_WRITE = 0666
 const OUTPUT_ROW_COUNT_LIMIT = 2000
 
 var CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES = []byte(CALCULATION_LAG_INFO_ROW_BUCKET_NAME)
+var MIGRATION_BUCKET_NAME_BYTES = []byte(MIGRATION_BUCKET_NAME)
 
 func (storage *DataStorage) Open() {
 	db, err := bolt.Open(storage.Configuration.BoltDbFilePath,
@@ -28,6 +32,25 @@ func (storage *DataStorage) Open() {
 		&bolt.Options{Timeout: 30 * time.Second})
 	AssertWrapped(err, "Unable to open file "+storage.Configuration.BoltDbFilePath)
 	storage.db = db
+	storage.Migrate()
+}
+
+func (storage *DataStorage) Migrate() {
+	storage.db.Update(func(t *bolt.Tx) error {
+		t.CreateBucketIfNotExists(MIGRATION_BUCKET_NAME_BYTES)
+		migrations := t.Bucket(MIGRATION_BUCKET_NAME_BYTES)
+		for index, migration := range DataMigrations {
+			migrationKey := Int64ToBytes(int64(index))
+			if migrations.Get(migrationKey) == nil {
+				log.Println("Migrating " + strconv.Itoa(index))
+				migration.Migrate(t)
+				AssertWrapped(
+					migrations.Put(migrationKey, []byte{1}),
+					"Unable to store migration record")
+			}
+		}
+		return nil
+	})
 }
 
 func (storage *DataStorage) SaveCalculationLagInfoRow(row *CalculationLagInfoRow) {

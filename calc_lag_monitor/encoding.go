@@ -8,7 +8,7 @@ import (
 
 type BinaryObjectVersionNumber = uint8
 
-var DEFAULT_ENCODING = binary.LittleEndian
+var DEFAULT_ENCODING binary.ByteOrder = binary.BigEndian
 
 func BinaryWrite(buffer *bytes.Buffer, data interface{}) {
 	error := binary.Write(buffer, DEFAULT_ENCODING, data)
