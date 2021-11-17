@@ -29,7 +29,13 @@ func (builder *CalculationLagInfoRowsBuilder) Build(transaction *bolt.Tx) error 
 		return nil
 	}
 	cursor := bucket.Cursor()
-	key, value := cursor.First()
+	var key []byte
+	var value []byte
+	if builder.StartUnixMillis <= 0 {
+		key, value = cursor.First()
+	} else {
+		key, value = cursor.Seek(Int64ToBytes(builder.StartUnixMillis))
+	}
 	for key != nil && value != nil {
 		keyIsInRange := (builder.StartUnixMillis <= 0 || builder.StartUnixMillis <= BytesToInt64(key)) &&
 			(builder.EndUnixMillis <= 0 || BytesToInt64(key) < builder.EndUnixMillis)
@@ -37,6 +43,8 @@ func (builder *CalculationLagInfoRowsBuilder) Build(transaction *bolt.Tx) error 
 			row := &CalculationLagInfoRow{}
 			row.Read(bytes.NewBuffer(value))
 			builder.addRow(row)
+		} else {
+			break
 		}
 		key, value = cursor.Next()
 	}
