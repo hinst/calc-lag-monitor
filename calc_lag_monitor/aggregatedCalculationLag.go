@@ -52,6 +52,10 @@ func (lag *AggregatedCalculationLag) Clone() (result AggregatedCalculationLag) {
 	return
 }
 
+func (lag *AggregatedCalculationLag) GetAllHours() []float64 {
+	return []float64{lag.Min.Hours(), lag.Average.Hours(), lag.Max.Hours()}
+}
+
 type AggregatedCalculationLagEx struct {
 	AggregatedCalculationLag
 	Count int

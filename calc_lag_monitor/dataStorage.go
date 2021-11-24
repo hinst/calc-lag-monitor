@@ -75,14 +75,74 @@ func (storage *DataStorage) ReadCalculationLagInfoRows(startUnixMillis int64, en
 
 func (storage *DataStorage) GetStatistics() (result DataStorageStatistics) {
 	storage.db.View(func(transaction *bolt.Tx) error {
-		cursor := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES).Cursor()
-		key, _ := cursor.First()
-		for key != nil {
-			result.CountOfCalculationLagRecords += 1
-			key, _ = cursor.Next()
+		bucket := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
+		if bucket != nil {
+			cursor := bucket.Cursor()
+			key, _ := cursor.First()
+			for key != nil {
+				result.CountOfCalculationLagRecords += 1
+				key, _ = cursor.Next()
+			}
 		}
 		return nil
 	})
+	return
+}
+
+func (storage *DataStorage) RemoveAnomalies(writeEnabled bool) (result string) {
+	anomalyKeys := make([][]byte, 0)
+	storage.db.View(func(transaction *bolt.Tx) error {
+		bucket := transaction.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
+
+		if bucket != nil {
+			cursor := bucket.Cursor()
+			key, value := cursor.First()
+			for key != nil {
+				keyTime := time.UnixMilli(BytesToInt64(key))
+				var row CalculationLagInfoRow
+				row.Read(bytes.NewBuffer(value))
+				rowTime := row.Time
+				if !keyTime.Equal(rowTime) {
+					result += "Inconsistency: key time does not match row time " +
+						keyTime.String() + " " + row.Time.String() + "\n"
+				}
+				allHours := make([]float64, 0)
+				allHours = append(allHours, row.Cheap.GetAllHours()...)
+				allHours = append(allHours, row.Expensive.GetAllHours()...)
+				var isAnomaly bool
+				for _, hours := range allHours {
+					if hours > 100_000 {
+						isAnomaly = true
+					}
+				}
+				if isAnomaly {
+					result += "Inconsistency: duration is too long at " + row.Time.String() + "\n"
+					anomalyKeys = append(anomalyKeys, key)
+				}
+
+				key, value = cursor.Next() // must be at the end of the loop
+			}
+		}
+		return nil
+	})
+	result += "Total count of anomalies: " + strconv.Itoa(len(anomalyKeys)) + "\n"
+	if writeEnabled {
+		updateResult := storage.db.Update(func(t *bolt.Tx) error {
+			calculationLagInfoBucket := t.Bucket(CALCULATION_LAG_INFO_ROW_BUCKET_NAME_BYTES)
+			if calculationLagInfoBucket != nil {
+				for _, anomalyKey := range anomalyKeys {
+					calculationLagInfoBucket.Delete(anomalyKey)
+				}
+			}
+			return nil
+		})
+		const errorMessage = "Update failed. Unable to remove anomalies"
+		if updateResult != nil {
+			result += errorMessage + "\n" + updateResult.Error()
+		}
+		AssertWrapped(updateResult, errorMessage)
+		result += "Anomalies were removed: " + strconv.Itoa(len(anomalyKeys))
+	}
 	return
 }
 
