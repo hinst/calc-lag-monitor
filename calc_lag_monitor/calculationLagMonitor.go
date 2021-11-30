@@ -19,47 +19,45 @@ const trailingCalculationRequestsRatio = 0.1
 type CalculationLogMonitor struct {
 	Storage       *DataStorage
 	Configuration *Configuration
-	IsRunning     bool
-	Url           string
-	Finished      chan bool
-	Interval      time.Duration
-	ticker        Ticker
 	LogEnabled    bool
+
+	url       string
+	isRunning bool
+	ticker    Ticker
+	finished  chan bool
 }
 
 func (monitor *CalculationLogMonitor) Start() {
-	if monitor.Interval == 0 {
-		monitor.Interval = time.Second *
-			time.Duration(monitor.Configuration.SamplingIntervalSeconds)
+	interval := time.Second * time.Duration(monitor.Configuration.SamplingIntervalSeconds)
+	monitor.ticker.Initialize(interval)
+	if monitor.finished == nil {
+		monitor.finished = make(chan bool)
 	}
-	monitor.ticker.Initialize(monitor.Interval)
-	if monitor.Finished == nil {
-		monitor.Finished = make(chan bool)
-	}
-	if monitor.IsRunning {
+	monitor.url = monitor.Configuration.MongoDbUrl
+
+	if monitor.isRunning {
 		panic(CreateException("Already running", nil))
 	}
-	monitor.Url = monitor.Configuration.MongoDbUrl
-	monitor.IsRunning = true
+	monitor.isRunning = true
 	go monitor.run()
 }
 
 func (monitor *CalculationLogMonitor) Stop() {
-	monitor.IsRunning = false
+	monitor.isRunning = false
 }
 
 func (monitor *CalculationLogMonitor) Wait() {
-	<-monitor.Finished
+	<-monitor.finished
 }
 
 func (monitor *CalculationLogMonitor) run() {
-	for monitor.IsRunning {
+	for monitor.isRunning {
 		if monitor.ticker.Advance(tickDuration) {
 			monitor.runOnceSafe()
 		}
 		time.Sleep(tickDuration)
 	}
-	monitor.Finished <- true
+	monitor.finished <- true
 }
 
 func (monitor *CalculationLogMonitor) runOnceSafe() {
@@ -82,8 +80,8 @@ func (monitor *CalculationLogMonitor) runOnce() {
 func (monitor *CalculationLogMonitor) readCalculationLag() CalculationLagInfoRow {
 	context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	client, mongoError := mongo.Connect(context, options.Client().ApplyURI(monitor.Url))
-	AssertWrapped(mongoError, "Unable to connect to MongoDB at URL "+monitor.Url)
+	client, mongoError := mongo.Connect(context, options.Client().ApplyURI(monitor.url))
+	AssertWrapped(mongoError, "Unable to connect to MongoDB at URL "+monitor.url)
 	disconnect := func() {
 		disconnectError := client.Disconnect(context)
 		AssertWrapped(disconnectError, "Unable to disconnect")
