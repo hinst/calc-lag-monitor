@@ -13,6 +13,11 @@ export default defineComponent({
   },
   mounted() {
     (this as any).renderChart(this.chartData, this.options);
+  },
+  methods: {
+    refresh() {
+      (this as any).renderChart(this.chartData, this.options);
+    }
   }
 })
 

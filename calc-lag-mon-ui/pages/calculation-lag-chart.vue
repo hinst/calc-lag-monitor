@@ -47,9 +47,20 @@
           ></v-date-picker>
         </v-menu>
       </div>
+      <!-- Time limit -->
+      <div style="max-width: 160px; display: inline-block">
+        <v-text-field
+          v-model="timeLimit"
+          label="Zoom"
+          prepend-icon="mdi-arrow-collapse-up "
+          clearable
+          @change="changeTimeLimit"
+          hide-details="true"
+        ></v-text-field>
+      </div>
     </div>
     <div v-if="chartData" style="max-width: 100%">
-      <CalculationLagChart :height="500" :chart-data="chartData" :options="chartOptions" />
+      <CalculationLagChart :height="500" :chart-data="chartData" :options="chartOptions" ref="chart" />
     </div>
     <div v-if="aggregationLevelText">
       Current aggregation level: {{aggregationLevelText}} | Count of points: {{ countOfPoints }}
@@ -63,6 +74,7 @@ import lodash from 'lodash';
 import { DateTime, Duration } from 'luxon';
 import { buildParametersString } from '../url';
 import { ChartOptions } from 'chart.js';
+import parse_duration from 'parse-duration';
 
 interface CalculationLagItem {
   Min: number;
@@ -95,6 +107,7 @@ export default defineComponent({
     const chartData = ref<any>(null);
     const aggregationLevelText = ref<string | null>(null);
     const countOfPoints = ref<number | null>(null);
+    const chart = ref();
 
     const chartOptions = ref<ChartOptions>({
       responsive: true,
@@ -145,6 +158,7 @@ export default defineComponent({
 
     const timeStart = ref<string | null>(DateTime.now().minus({days: 7}).toFormat('yyyy-MM-dd'));
     const timeEnd = ref<string | null>(DateTime.now().plus({days: 1}).toFormat('yyyy-MM-dd'));
+    const timeLimit = ref<string>('');
 
     const read = async() => {
       const params: { [key: string]: string } = {};
@@ -191,16 +205,32 @@ export default defineComponent({
       load();
     };
 
+    const changeTimeLimit = () => {
+      const newChartOptions = { ...chartOptions.value };
+      const ticks = newChartOptions.scales?.yAxes?.[0].ticks;
+      if (ticks) {
+        const duration = parse_duration(timeLimit.value);
+        if (duration)
+          ticks.max = parse_duration(timeLimit.value) / 1000;
+        else
+          delete ticks.max;
+        chart.value.refresh();
+      }
+    };
+
     load();
     setInterval(load, 60 * 1000);
     return {
+      chart,
       chartData,
       chartOptions,
       aggregationLevelText,
       countOfPoints,
       timeStart,
       timeEnd,
+      timeLimit,
       changeTimeRange,
+      changeTimeLimit
     };
   },
 });
