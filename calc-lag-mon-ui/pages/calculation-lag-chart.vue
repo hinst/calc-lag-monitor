@@ -2,6 +2,7 @@
   <div>
     <div>
       <div style="max-width: 160px; display: inline-block">
+        <!-- Date time range from -->
         <v-menu>
           <template v-slot:activator="{ on, attrs }">
             <v-text-field
@@ -23,6 +24,7 @@
           ></v-date-picker>
         </v-menu>
       </div>
+      <!-- Date time range to -->
       <div style="max-width: 160px; display: inline-block">
         <v-menu>
           <template v-slot:activator="{ on, attrs }">
