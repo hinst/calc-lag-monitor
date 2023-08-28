@@ -178,8 +178,8 @@ export default defineComponent({
       let responseArray: CalculationLagRow[] = responseObject.Rows;
       countOfPoints.value = responseArray.length;
       responseArray = lodash.sortBy(responseArray, row => new Date(row.Time));
-      const cheapData = responseArray.map(a => ({ x: new Date(a.Time), y: a.Cheap.Average / 1000_000_000 }));
-      const expensiveData = responseArray.map(a => ({ x: new Date(a.Time), y: a.Expensive.Average / 1000_000_000 }));
+      const cheapData = responseArray.map(a => ({ x: new Date(a.Time), y: Math.max(0, a.Cheap.Average) / 1000_000_000 }));
+      const expensiveData = responseArray.map(a => ({ x: new Date(a.Time), y: Math.max(0, a.Expensive.Average) / 1000_000_000 }));
       chartData.value = {
         labels: responseArray.map(a => new Date(a.Time)),
         datasets: [
