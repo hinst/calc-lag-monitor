@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "calc-lag-mon-ui"
+		},
+		{
+			"path": "calc-lag-mon-build"
 		}
 	],
 	"settings": {
