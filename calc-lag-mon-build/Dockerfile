@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
+RUN apt-get update
+RUN apt-get install -y ca-certificates
+RUN update-ca-certificates -v
 
 WORKDIR /
 RUN mkdir /app
