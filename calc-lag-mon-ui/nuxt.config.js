@@ -78,6 +78,6 @@ export default {
   },
 
   env: {
-    apiUrl: process.env.API_URL || 'http://localhost:3006'
+    apiUrl: process.env.API_URL || ''
   }
 }
