@@ -1,1 +1,1 @@
-docker run -d --name calc-lag-monitor --publish 3007:3006 --mount source=calc-lag-monitor-storage,target=/storage calc-lag-monitor
+docker run -d --name calc-lag-monitor --publish 3006:3006 --mount source=calc-lag-monitor-storage,target=/storage calc-lag-monitor
