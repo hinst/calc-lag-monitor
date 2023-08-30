@@ -11,6 +11,7 @@ type Configuration struct {
 	BoltDbFilePath          string `json:"boltDbFilePath"`
 	SamplingIntervalSeconds int    `json:"samplingIntervalSeconds"`
 	SamplingEnabled         bool   `json:"samplingEnabled"`
+	Password                string `json:"password"`
 }
 
 const configurationFilePath = "./configuration.json"
@@ -26,6 +27,11 @@ func LoadConfiguration() Configuration {
 	var mongoDbUrl = os.Getenv("MONGO_DB_URL")
 	if len(mongoDbUrl) > 0 {
 		configuration.MongoDbUrl = mongoDbUrl
+	}
+
+	var password = os.Getenv("PASSWORD")
+	if len(password) > 0 {
+		configuration.Password = password
 	}
 	return configuration
 }

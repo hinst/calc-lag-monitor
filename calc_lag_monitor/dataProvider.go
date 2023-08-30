@@ -5,13 +5,15 @@ import (
 )
 
 type DataProvider struct {
-	Storage *DataStorage
+	Storage       *DataStorage
+	Configuration *Configuration
+	Web           *Web
 }
 
 func (provider *DataProvider) Register() {
-	HandleFunc("/lag", provider.Lag)
-	HandleFunc("/dbStats", provider.DbStats)
-	HandleFunc("/removeAnomalies", provider.RemoveAnomalies)
+	provider.HandleFunc("/lag", provider.Lag)
+	provider.HandleFunc("/dbStats", provider.DbStats)
+	provider.HandleFunc("/removeAnomalies", provider.RemoveAnomalies)
 }
 
 func (provider *DataProvider) Lag(responseWriter http.ResponseWriter, request *http.Request) {
@@ -31,4 +33,8 @@ func (provider *DataProvider) RemoveAnomalies(responseWriter http.ResponseWriter
 	AddContentTypeHeader(responseWriter.Header(), CONTENT_TYPE_TEXT)
 	writeEnabled := request.URL.Query().Get("writeEnabled")
 	responseWriter.Write([]byte(provider.Storage.RemoveAnomalies(len(writeEnabled) > 0)))
+}
+
+func (provider *DataProvider) HandleFunc(path string, f WebFunction) {
+	provider.Web.HandleFunc(API_URL+path, f)
 }

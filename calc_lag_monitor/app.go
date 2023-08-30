@@ -9,6 +9,7 @@ import (
 
 type App struct {
 	Configuration Configuration
+	Web           Web
 	Storage       *DataStorage
 	Monitor       *CalculationLogMonitor
 	Provider      *DataProvider
@@ -17,6 +18,8 @@ type App struct {
 
 func (app *App) Run() {
 	app.Configuration = LoadConfiguration()
+	app.Web.Username = "admin"
+	app.Web.Password = app.Configuration.Password
 	app.InitializeStorage()
 	log.Println("Sampling enabled: " + strconv.FormatBool(app.Configuration.SamplingEnabled))
 	if app.Configuration.SamplingEnabled {
@@ -60,7 +63,7 @@ func (app *App) InitializeMonitor() {
 
 func (app *App) InitializeProvider() {
 	if app.Provider == nil {
-		app.Provider = &DataProvider{Storage: app.Storage}
+		app.Provider = &DataProvider{Storage: app.Storage, Configuration: &app.Configuration, Web: &app.Web}
 		app.Provider.Register()
 	}
 }
@@ -68,7 +71,7 @@ func (app *App) InitializeProvider() {
 func (app *App) InitializeWebUi() {
 	registerFolder := func(path string) {
 		files := http.FileServer(http.Dir("../calc-lag-mon-ui/dist" + path))
-		http.Handle("/clm-ui"+path, http.StripPrefix("/clm-ui"+path, files))
+		app.Web.Handle(WEB_URL+path, http.StripPrefix(WEB_URL+path, files))
 	}
 	registerFolder("")
 	registerFolder("/_nuxt/")
